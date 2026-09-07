@@ -20,6 +20,8 @@ HomeKeeper does both:
 - **Plans.** When you register an appliance, HomeKeeper derives its maintenance schedule (filters, descaling, inspections) and surfaces what's due.
 - **Acts.** Consumables are linked to products, so "order the fridge filter" is one turn.
 
+
+
 ## How it works
 
 ```
@@ -34,18 +36,24 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (
 - **Elicitation**: when a request is ambiguous ("the filter" in a house with three filters), the server asks instead of guessing.
 - **Simulated Alexa+ host**: a web app that speaks to the same server exactly as Alexa+ would (Bedrock-backed reasoning, MCP client, MCP Apps rendering). This is the demo surface while the Alexa+ MCP Toolkit is in Private Preview.
 
+
+
 ### Tools exposed
 
-| Tool | What it does |
-| --- | --- |
-| `register_appliance` | Add an appliance (brand, model, room, purchase date). Auto-derives maintenance schedule. |
-| `list_appliances` | Household inventory, rendered as a carousel card. |
-| `ingest_manual` | Attach a manual (URL or upload) and index it for retrieval. |
-| `troubleshoot` | Grounded Q&A against the appliance's manual (error codes, how-tos), with source page card. |
-| `maintenance_due` | What needs attention now and in the next 30 days. |
-| `log_maintenance` | Record a completed task, resets its schedule. |
-| `reorder_consumable` | Find and order the matching filter / part / consumable. |
-| `warranty_status` | Is it still covered, and what do I need to claim. |
+
+| Tool                 | What it does                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `register_appliance` | Add an appliance (brand, model, room, purchase date). Auto-derives maintenance schedule.   |
+| `list_appliances`    | Household inventory, rendered as a carousel card.                                          |
+| `ingest_manual`      | Attach a manual (URL or upload) and index it for retrieval.                                |
+| `troubleshoot`       | Grounded Q&A against the appliance's manual (error codes, how-tos), with source page card. |
+| `maintenance_due`    | What needs attention now and in the next 30 days.                                          |
+| `log_maintenance`    | Record a completed task, resets its schedule.                                              |
+| `reorder_consumable` | Find and order the matching filter / part / consumable.                                    |
+| `warranty_status`    | Is it still covered, and what do I need to claim.                                          |
+
+
+
 
 ## Repository layout
 
@@ -62,6 +70,8 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (
 ├── LICENSE            # MIT
 └── README.md
 ```
+
+
 
 ## Running locally
 
@@ -105,18 +115,33 @@ Alexa+ introspects the tools, registers the add-on, and you can test in the web 
 
 ## AWS services used
 
-| Service | Role |
-| --- | --- |
-| Amazon Bedrock (Claude) | Tool-side reasoning: maintenance schedule derivation, troubleshooting synthesis; host-side reasoning in the simulator |
-| Amazon Bedrock Knowledge Bases | Manual ingestion, chunking, embedding, and retrieval |
-| Amazon Bedrock AgentCore Runtime | Hosting the MCP server (Streamable HTTP, session-aware) |
-| Amazon DynamoDB | Per-household appliances, schedules, maintenance history |
-| Amazon S3 | Manual storage |
-| AWS CDK | Infrastructure as code |
 
-## Status
+| Service                          | Role                                                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Amazon Bedrock (Claude)          | Tool-side reasoning: maintenance schedule derivation, troubleshooting synthesis; host-side reasoning in the simulator |
+| Amazon Bedrock Knowledge Bases   | Manual ingestion, chunking, embedding, and retrieval                                                                  |
+| Amazon Bedrock AgentCore Runtime | Hosting the MCP server (Streamable HTTP, session-aware)                                                               |
+| Amazon DynamoDB                  | Per-household appliances, schedules, maintenance history                                                              |
+| Amazon S3                        | Manual storage                                                                                                        |
+| AWS CDK                          | Infrastructure as code                                                                                                |
 
-Early development. See the [project board](../../projects) and `docs/friction-log.md` for progress and notes.
+
+
+
+## Status and roadmap
+
+Active development for the hackathon (deadline Oct 23, 2026).
+
+- [x] MCP server: 10 tools, Streamable HTTP (stateful + stateless), MCP spec 2025-11-25
+- [x] Household state: appliances, derived maintenance schedules, logs, orders (in-memory + DynamoDB/S3 stores)
+- [x] Grounded troubleshooting: manual chunking, hybrid retrieval (Bedrock embeddings + keyword), bundled sample manuals
+- [x] Order confirmation via MCP elicitation, with two-step fallback for hosts without it
+- [ ] MCP App views: appliance carousel, troubleshoot card, maintenance timeline, order card
+- [ ] Simulated Alexa+ host (web app): Bedrock-backed reasoning, MCP client, MCP Apps rendering, voice in/out
+- [ ] AWS CDK: DynamoDB, S3, Bedrock AgentCore Runtime (Node.js 22 direct code deploy)
+- [ ] Deploy, end-to-end test against the hosted server
+- [ ] Alexa+ MCP Toolkit registration (`alexa-ai new mcp` / `alexa-ai deploy`) once Private Preview access is granted
+- [ ] Demo video, friction log, product feedback (`docs/`)
 
 ## License
 
