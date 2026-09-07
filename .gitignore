@@ -30,3 +30,7 @@ npm-debug.log*
 # Local data
 .data/
 tmp/
+
+# server deploy artifacts
+packages/server/bundle/
+packages/server/*.zip

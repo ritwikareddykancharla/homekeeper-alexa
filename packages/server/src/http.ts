@@ -91,10 +91,13 @@ export function createHttpServer(opts: HttpOptions) {
       return;
     }
 
-    if (req.method === "POST" && !sessionId && isInitializeRequest(body)) {
+    if (req.method === "POST" && isInitializeRequest(body)) {
+      // A new session. Some platforms (Bedrock AgentCore) inject their own
+      // Mcp-Session-Id on the initialize request for routing affinity; honour
+      // it so the id the client sees is the one we key our session on.
       const server = opts.createServer();
       const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
+        sessionIdGenerator: () => sessionId ?? randomUUID(),
         onsessioninitialized: (id) => {
           sessions.set(id, { transport, server, lastSeen: Date.now() });
           log(`session ${id} initialized`);

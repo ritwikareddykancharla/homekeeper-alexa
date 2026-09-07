@@ -16,7 +16,10 @@
     "dev:sim": "npm run dev -w @homekeeper/simulator",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "inspector": "npx @modelcontextprotocol/inspector"
+    "inspector": "npx @modelcontextprotocol/inspector",
+    "bundle": "npm run build -w @homekeeper/ui && npm run bundle -w @homekeeper/server",
+    "deploy": "npm run bundle && npm run deploy -w @homekeeper/infra",
+    "destroy": "npm run destroy -w @homekeeper/infra"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

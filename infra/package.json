@@ -1,0 +1,23 @@
+{
+  "name": "@homekeeper/infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AWS CDK stack for HomeKeeper: DynamoDB, S3, Bedrock AgentCore Runtime",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "synth": "cdk synth --strict",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy --require-approval never",
+    "destroy": "cdk destroy",
+    "bootstrap": "cdk bootstrap",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.268.0",
+    "constructs": "^10.4.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1100.0"
+  }
+}
