@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# CDK
+infra/cdk.out/
+cdk.context.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local data
+.data/
+tmp/
