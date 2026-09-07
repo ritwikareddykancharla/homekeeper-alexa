@@ -64,7 +64,8 @@ export function keywordScores(query: string, chunks: ManualChunk[]): number[] {
   for (const d of docs) for (const t of new Set(d)) df.set(t, (df.get(t) ?? 0) + 1);
   const k1 = 1.4;
   const b = 0.75;
-  return docs.map((d) => {
+  const isProblem = /\b(not|won't|doesn't|isn't|only|error|code|leak|slow|short|stuck|noise|loud|smell|blink|flash|stopped|broken|half|weak)\b/i.test(query);
+  return docs.map((d, i) => {
     const tf = new Map<string, number>();
     for (const t of d) tf.set(t, (tf.get(t) ?? 0) + 1);
     let score = 0;
@@ -78,6 +79,8 @@ export function keywordScores(query: string, chunks: ManualChunk[]): number[] {
     for (const code of query.match(/\b[a-z]{1,2}-?\d{1,3}\b/gi) ?? []) {
       if (new RegExp(`\\b${code.replace("-", "-?")}\\b`, "i").test(d.join(" "))) score += 5;
     }
+    // Symptom questions should prefer troubleshooting sections over feature descriptions.
+    if (isProblem && /troubleshoot|error|symptom|problem/i.test(chunks[i].section ?? "")) score *= 1.6;
     return score;
   });
 }
