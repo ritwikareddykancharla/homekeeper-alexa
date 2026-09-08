@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HomeKeeper: your home's memory, on Alexa+</title>
+    <meta name="description" content="HomeKeeper is an Alexa+ add-on built as an open-source MCP server on AWS. It remembers every appliance in your house, reads their manuals, keeps a maintenance schedule and reorders the parts you forget." />
+    <meta property="og:title" content="HomeKeeper: your home's memory, on Alexa+" />
+    <meta property="og:description" content="An Alexa+ add-on, built as an open-source MCP server on Amazon Bedrock AgentCore. Remembers, reads, plans, acts." />
+    <meta property="og:image" content="https://ritwikareddykancharla.github.io/homekeeper-alexa/assets/simulator-e24.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2322d3ee'/%3E%3Cpath d='M9 17l7-7 7 7v7H9z' fill='%230b1220'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="#top"><span class="dot"></span>HomeKeeper</a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#tools">Tools</a>
+        <a href="#aws">On AWS</a>
+        <a href="#run">Run it</a>
+        <a class="gh" href="https://github.com/ritwikareddykancharla/homekeeper-alexa">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <p class="kicker">Alexa+ add-on · open-source MCP server · runs on AWS</p>
+        <h1>Your home's memory,<br /><em>on Alexa+.</em></h1>
+        <p class="lede">
+          HomeKeeper remembers every appliance in your house, reads their manuals so you don't have to, builds the
+          maintenance schedule itself, and reorders the parts you forget about. Ask in plain words; get a grounded answer
+          and a card you can act on.
+        </p>
+        <div class="convo" aria-label="Example conversation">
+          <div class="u">Alexa, the dishwasher is showing E24.</div>
+          <div class="a">
+            Oh, that one's easy. E24 means the water isn't draining on your Bosch 300 Series. Check the drain hose for a
+            kink and clean the filter under the lower rack. I've put the steps on screen.
+          </div>
+        </div>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/ritwikareddykancharla/homekeeper-alexa">View the source</a>
+          <a class="btn" href="#run">Run it locally</a>
+        </div>
+        <figure class="shot">
+          <img src="./assets/simulator-e24.png" alt="Simulated Alexa+ host showing HomeKeeper's troubleshooting card for a Bosch dishwasher E24 error, with steps from the manual and the source excerpt" loading="eager" />
+          <figcaption>
+            Live against the deployed stack: the simulated Alexa+ host calls <code>troubleshoot</code> on Bedrock AgentCore
+            Runtime; Claude grounds the answer in the manual and the MCP App card renders inline.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="why">
+        <h2>Why</h2>
+        <p>
+          Every household owns 20 to 40 appliances, each with a manual nobody keeps, a warranty nobody tracks, and a filter
+          nobody remembers to replace. The information exists; it is just scattered across PDFs, receipts and the back of a
+          cabinet. A voice assistant in the kitchen is the natural home for it, but only if it can actually
+          <strong>remember</strong> across sessions and <strong>read</strong> the source material instead of guessing.
+        </p>
+        <div class="grid four">
+          <div class="card">
+            <h3>Remembers</h3>
+            <p>Appliances, purchase dates, warranties and maintenance history persist per household, across every conversation.</p>
+          </div>
+          <div class="card">
+            <h3>Reads</h3>
+            <p>Manuals are chunked, embedded with Amazon Bedrock and retrieved per question, so answers are grounded in the actual document, with the excerpt shown.</p>
+          </div>
+          <div class="card">
+            <h3>Plans</h3>
+            <p>Registering an appliance derives its maintenance schedule: filters, descaling, inspections. HomeKeeper surfaces what is due and what is overdue.</p>
+          </div>
+          <div class="card">
+            <h3>Acts</h3>
+            <p>Consumables are linked to products, so "order the fridge filter" is one turn, confirmed through MCP elicitation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="how" class="how">
+        <h2>How it works</h2>
+        <p class="sub">
+          Alexa+ talks to add-ons over the <a href="https://modelcontextprotocol.io">Model Context Protocol</a>. HomeKeeper
+          is a self-hosted MCP server (spec 2025-11-25, Streamable HTTP) with MCP Apps cards, deployed to Amazon Bedrock
+          AgentCore Runtime.
+        </p>
+        <pre class="diagram" aria-label="Architecture diagram">
+Alexa+ (MCP client) ──Streamable HTTP──▶ HomeKeeper MCP server ──▶ Bedrock   Claude Sonnet 4.5: reasoning
+        ▲                                on AgentCore Runtime              Titan Embeddings V2: retrieval
+        │                                        │                 DynamoDB  household state
+        └──── renders MCP App cards ◀────────────┘                 S3        manual chunks + embeddings</pre>
+        <div class="grid three">
+          <div class="card">
+            <h3>Grounded troubleshooting</h3>
+            <p>Manuals are split by section and embedded. Retrieval is a hybrid of cosine similarity and keyword scoring, so an exact code like <code>E24</code> always hits. Claude writes the answer from the retrieved chunks only.</p>
+          </div>
+          <div class="card">
+            <h3>MCP Apps cards</h3>
+            <p>Tools declare <code>_meta.ui.resourceUri</code>; any MCP Apps host renders the appliance carousel, troubleshooting card, maintenance timeline and order confirmation inline. Cards can call tools back ("That fixed it", "Reorder part").</p>
+          </div>
+          <div class="card">
+            <h3>Confirmation, not guessing</h3>
+            <p>Orders go through MCP elicitation when the host supports it, with a two-step quote-then-confirm fallback. Ambiguous appliance references return candidates instead of a guess.</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="./assets/simulator-maintenance.png" alt="Maintenance timeline card listing tasks due in the coming weeks with Done and Reorder part buttons, and Alexa's spoken summary of what is overdue" loading="lazy" />
+          <figcaption>"What needs attention this month?" The timeline card comes from <code>maintenance_due</code>; the spoken summary is written by Claude and voiced by Amazon Polly.</figcaption>
+        </figure>
+      </section>
+
+      <section id="tools" class="tools">
+        <h2>Ten tools, one add-on</h2>
+        <table>
+          <tbody>
+            <tr><td><code>register_appliance</code></td><td>Add an appliance (brand, model, room, purchase date). Auto-derives its maintenance schedule.</td></tr>
+            <tr><td><code>list_appliances</code></td><td>Household inventory, rendered as a carousel card.</td></tr>
+            <tr><td><code>ingest_manual</code></td><td>Attach a manual (URL or upload) and index it for retrieval.</td></tr>
+            <tr><td><code>troubleshoot</code></td><td>Grounded Q&amp;A against the appliance's manual, with the source excerpt.</td></tr>
+            <tr><td><code>maintenance_due</code></td><td>What needs attention now and in the next 30 days.</td></tr>
+            <tr><td><code>log_maintenance</code></td><td>Record a completed task; resets its schedule.</td></tr>
+            <tr><td><code>reorder_consumable</code></td><td>Find and order the matching filter, part or consumable.</td></tr>
+            <tr><td><code>warranty_status</code></td><td>Is it still covered, and what do I need to claim.</td></tr>
+            <tr><td><code>maintenance_history</code></td><td>What has been done, when.</td></tr>
+            <tr><td><code>remove_appliance</code></td><td>Forget an appliance.</td></tr>
+          </tbody>
+        </table>
+        <p class="sub">Plus a <code>weekly_checkup</code> prompt and four <code>ui://homekeeper/*.html</code> MCP App resources. Because it is plain MCP, the same server works unchanged in Claude, ChatGPT, VS Code and any other MCP host.</p>
+      </section>
+
+      <section id="voice" class="voice">
+        <h2>A simulated Alexa+ while the toolkit is in preview</h2>
+        <p class="sub">
+          The Alexa+ MCP Toolkit is Private Preview, so the repo ships a web host that behaves like Alexa+ against the same
+          server: an MCP client (SigV4-signed for AgentCore), MCP Apps rendering in sandboxed iframes, and two ways to talk.
+        </p>
+        <div class="grid two">
+          <div class="card">
+            <h3>Type</h3>
+            <p>Bedrock Converse with Claude Sonnet 4.5 runs the tool loop; replies are spoken by Amazon Polly (generative Ruth by default, switchable live).</p>
+          </div>
+          <div class="card">
+            <h3>Talk</h3>
+            <p>Tap the mic for a live session with Amazon Nova 2 Sonic: speech in, reasoning, MCP tool calls and barge-in over one bidirectional stream, with each sentence voiced by Polly.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="aws" class="aws">
+        <h2>Built on AWS</h2>
+        <div class="grid three">
+          <div class="card"><h3>Amazon Bedrock AgentCore Runtime</h3><p>Hosts the MCP server in MCP protocol mode as a Node.js 22 direct-code deploy. No containers.</p></div>
+          <div class="card"><h3>Amazon Bedrock</h3><p>Claude Sonnet 4.5 for reasoning and grounded synthesis; Titan Text Embeddings V2 for retrieval; Nova 2 Sonic for live voice.</p></div>
+          <div class="card"><h3>Amazon Polly</h3><p>Generative voices for everything the user hears, with SSML so error codes are read letter by letter.</p></div>
+          <div class="card"><h3>Amazon DynamoDB</h3><p>Single-table household state: appliances, schedules, maintenance history, orders.</p></div>
+          <div class="card"><h3>Amazon S3</h3><p>Manual chunks with their embeddings.</p></div>
+          <div class="card"><h3>AWS CDK</h3><p>All of it as code, including the runtime, IAM and an optional Cognito issuer for OAuth-protected inbound auth.</p></div>
+        </div>
+      </section>
+
+      <section id="run" class="run">
+        <h2>Run it</h2>
+        <p class="sub">Node.js 22+. AWS credentials are optional locally; without them the server and simulator run in a rule-based mode that still exercises every tool and card.</p>
+        <pre><code>git clone https://github.com/ritwikareddykancharla/homekeeper-alexa
+cd homekeeper-alexa
+npm install
+npm run dev        # MCP server on :3000/mcp, simulator on :5173
+
+# with Bedrock
+AWS_PROFILE=your-profile AWS_REGION=us-east-1 npm run dev
+
+# deploy to AWS (DynamoDB, S3, AgentCore Runtime)
+npm run deploy</code></pre>
+        <p class="sub">
+          Read the <a href="https://github.com/ritwikareddykancharla/homekeeper-alexa#readme">README</a>, the
+          <a href="https://github.com/ritwikareddykancharla/homekeeper-alexa/blob/main/docs/friction-log.md">friction log</a>
+          and the <a href="https://github.com/ritwikareddykancharla/homekeeper-alexa/blob/main/docs/product-feedback.md">product feedback</a>.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Built for <a href="https://amazonappdev2026.devpost.com">Build, Ship, Shape: Amazon Developer Hackathon 2026</a>
+        (Alexa+ track, AWS Builder and Open Source mini challenges). MIT licensed.
+      </p>
+      <p class="fine">HomeKeeper is an independent project and is not affiliated with or endorsed by Amazon. Alexa is a trademark of Amazon.com, Inc.</p>
+    </footer>
+  </body>
+</html>

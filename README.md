@@ -7,7 +7,7 @@ HomeKeeper is an [Alexa+](https://developer.amazon.com/alexaplus/) add-on built 
 > "Alexa, the dishwasher is showing E24."
 > "That's a drain error on your Bosch 300 Series. Check the drain hose for a kink and clean the filter under the lower rack. Want me to show you the steps?"
 
-Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com) (Alexa+ track, AWS Builder and Open Source mini challenges).
+Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com) (Alexa+ track, AWS Builder and Open Source mini challenges). Landing page: [ritwikareddykancharla.github.io/homekeeper-alexa](https://ritwikareddykancharla.github.io/homekeeper-alexa/).
 
 ## Why
 
@@ -70,6 +70,7 @@ Plus a `weekly_checkup` prompt and four `ui://homekeeper/*.html` MCP App resourc
 │   ├── ui/            # MCP App views (single-file HTML cards rendered by the host)
 │   └── simulator/     # Simulated Alexa+ host: Node API (Bedrock + MCP client) and Vite web UI
 ├── infra/             # AWS CDK: DynamoDB, S3, IAM, Bedrock AgentCore Runtime, optional Cognito
+├── site/              # Landing page (static, published to GitHub Pages)
 ├── docs/
 │   ├── friction-log.md
 │   └── product-feedback.md
