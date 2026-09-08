@@ -7,8 +7,8 @@
  * hand the result back, and Sonic speaks the answer while the card renders.
  *
  * Sonic's own voices are its weak point, so by default its audio is discarded
- * and each sentence it decides to say is spoken by Polly (generative Joanna,
- * the classic Alexa voice) as soon as the text arrives.
+ * and each sentence it decides to say is spoken by Polly (generative Ruth by
+ * default) as soon as the text arrives.
  *
  *   SONIC_MODEL_ID  default amazon.nova-2-sonic-v1:0
  *   SONIC_VOICE     tiffany (default) | matthew | amy | olivia | ...   (only heard with SONIC_SPEAKER=sonic)
@@ -30,7 +30,9 @@ export const sonicInfo = {
   model: process.env.SONIC_MODEL_ID ?? "amazon.nova-2-sonic-v1:0",
   voice: process.env.SONIC_VOICE ?? "tiffany",
   /** Who the user actually hears. */
-  speaker: speaker === "polly" ? `Polly ${ttsInfo.voice}` : `Sonic ${process.env.SONIC_VOICE ?? "tiffany"}`,
+  get speaker() {
+    return speaker === "polly" ? `Polly ${ttsInfo.voice}` : `Sonic ${process.env.SONIC_VOICE ?? "tiffany"}`;
+  },
   inputRate: 16000,
   outputRate: 24000
 };

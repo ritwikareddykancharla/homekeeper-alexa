@@ -7,7 +7,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { config } from "./config.js";
 import { HomeKeeperClient } from "./mcp-client.js";
 import { AlexaHost, type HostEvent } from "./host.js";
-import { synthesize, ttsInfo } from "./tts.js";
+import { listVoices, setVoice, synthesize, ttsInfo } from "./tts.js";
 import { elicitVia, pendingElicits } from "./elicit.js";
 import { SonicSession, sonicInfo, type VoiceEvent } from "./sonic.js";
 
@@ -37,8 +37,8 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       auth: config.mcpAuth,
       model: config.modelId,
       mode: host.mode,
-      tts: ttsInfo,
-      voice: sonicInfo,
+      tts: { provider: ttsInfo.provider, voice: ttsInfo.voice, engine: ttsInfo.engine },
+      voice: { ...sonicInfo, speaker: sonicInfo.speaker },
       region: config.region,
       household: config.householdId,
       tools: mcp.listTools().map((t) => t.name),
@@ -126,6 +126,21 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       return json(res, 502, { error: (err as Error).message });
     }
     return;
+  }
+
+  // ---- voice picker: list Polly voices / switch the active one
+  if (url.pathname === "/api/voice" && req.method === "GET") {
+    return json(res, 200, { current: { voice: ttsInfo.voice, engine: ttsInfo.engine }, voices: await listVoices() });
+  }
+  if (url.pathname === "/api/voice" && req.method === "POST") {
+    const body = await readJson(req);
+    try {
+      await setVoice(String(body.voice), body.engine as "generative" | "long-form" | "neural");
+      console.log(`[tts] voice -> ${ttsInfo.voice} (${ttsInfo.engine})`);
+      return json(res, 200, { voice: ttsInfo.voice, engine: ttsInfo.engine });
+    } catch (err) {
+      return json(res, 400, { error: (err as Error).message });
+    }
   }
 
   if (url.pathname === "/api/reset" && req.method === "POST") {

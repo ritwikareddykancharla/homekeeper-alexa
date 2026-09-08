@@ -39,7 +39,10 @@
         <button type="button" id="mic" title="Talk live (Nova 2 Sonic); click again to hang up">🎤</button>
         <button type="submit" title="Send">↵</button>
       </form>
-      <label class="voice"><input type="checkbox" id="tts" checked /> read replies aloud</label>
+      <div class="voicerow">
+        <label class="voice"><input type="checkbox" id="tts" checked /> read replies aloud</label>
+        <select id="voicePick" class="voicepick" title="Polly voice"></select>
+      </div>
     </footer>
 
     <script type="module" src="./main.ts"></script>

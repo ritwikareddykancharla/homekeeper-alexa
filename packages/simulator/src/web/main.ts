@@ -19,6 +19,7 @@ const form = $<HTMLFormElement>("#form");
 const input = $<HTMLInputElement>("#input");
 const mic = $<HTMLButtonElement>("#mic");
 const tts = $<HTMLInputElement>("#tts");
+const voicePick = $<HTMLSelectElement>("#voicePick");
 
 const sessionId = crypto.randomUUID();
 const pendingArgs = new Map<string, Record<string, unknown>>();
@@ -50,6 +51,47 @@ async function loadStatus() {
     status.classList.add("err");
   }
 }
+
+// ---------------------------------------------------------- voice picker
+const SAMPLE: Record<string, string> = {
+  default: "Hi, I'm {name}. Oh, and good news: your washer's still under warranty."
+};
+
+async function loadVoices() {
+  try {
+    const v = (await (await fetch("/api/voice")).json()) as {
+      current: { voice: string; engine: string };
+      voices: Array<{ id: string; name: string; gender: string; engine: string }>;
+    };
+    voicePick.replaceChildren();
+    const label: Record<string, string> = { generative: "generative", "long-form": "long-form · most expressive", neural: "neural" };
+    for (const engine of ["generative", "long-form", "neural"]) {
+      const group = document.createElement("optgroup");
+      group.label = label[engine] ?? engine;
+      for (const vo of v.voices.filter((x) => x.engine === engine)) {
+        const o = document.createElement("option");
+        o.value = `${vo.engine}:${vo.id}`;
+        o.textContent = `${vo.name} (${vo.gender[0] ?? ""})`;
+        group.appendChild(o);
+      }
+      if (group.children.length) voicePick.appendChild(group);
+    }
+    voicePick.value = `${v.current.engine}:${v.current.voice}`;
+  } catch {
+    voicePick.hidden = true;
+  }
+}
+
+voicePick.addEventListener("change", async () => {
+  const [engine, voice] = voicePick.value.split(":");
+  const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ voice, engine }) });
+  if (!res.ok) {
+    addAlexa(`Couldn't switch voice: ${((await res.json()) as { error: string }).error}`);
+    return;
+  }
+  void loadStatus();
+  void speak(SAMPLE.default.replace("{name}", voice));
+});
 
 // -------------------------------------------------------------- rendering
 function scroll() {
@@ -336,4 +378,5 @@ $<HTMLElement>("#suggestions").addEventListener("click", (e) => {
 });
 
 void loadStatus();
+void loadVoices();
 setInterval(() => void loadStatus(), 10_000);

@@ -42,8 +42,8 @@ Devpost asks, for every tool/API/SDK used: what we used it for, what worked well
 
 ## Amazon Polly (generative engine)
 
-- **Used for**: The voice the user hears (Joanna, the classic Alexa voice), for both typed turns and Sonic-driven live turns.
-- **Worked well**: Generative Joanna is a clear step up from neural and from browser TTS; `say-as characters` handles error codes; PCM output slots straight into the Web Audio queue.
+- **Used for**: The voice the user hears (Ruth generative, chosen in a side-by-side of all en-US generative and long-form voices; Joanna is the classic Alexa sound), for both typed turns and Sonic-driven live turns.
+- **Worked well**: Generative Ruth is a clear step up from neural and from browser TTS; runtime voice switching is one API call, so a picker in the UI was cheap; `say-as characters` handles error codes; PCM output slots straight into the Web Audio queue.
 - **Needs work**: PCM is capped at 16 kHz while Sonic emits 24 kHz, so the two paths differ in fidelity. No streaming synthesis for long sentences.
 - **Build again?**: Yes.
 

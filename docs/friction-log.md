@@ -80,7 +80,7 @@ Format per Devpost: task attempted, steps taken, expected vs actual, severity, w
 - **Expected**: One model for the whole voice loop.
 - **Actual**: ASR, turn detection, tool calling and barge-in all worked first try. But the synthesized voices (`tiffany`, `matthew`) sound noticeably worse than Polly's generative voices, and there is no way to select a Polly voice inside Sonic or to disable Sonic's audio output. Two smaller gotchas: `send()` deadlocks unless `sessionStart`/`promptStart` are already queued in the request body, and `audioOutputConfiguration` is mandatory even if you never play the audio.
 - **Severity**: Medium for anything user-facing.
-- **Workaround**: Discard Sonic's audio, speak its `SPECULATIVE` text sentence by sentence with Polly generative Joanna (`SONIC_SPEAKER=polly`). Costs a few hundred ms of latency and pays for speech tokens nobody hears.
+- **Workaround**: Discard Sonic's audio, speak its `SPECULATIVE` text sentence by sentence with Polly generative Ruth (`SONIC_SPEAKER=polly`). Costs a few hundred ms of latency and pays for speech tokens nobody hears.
 - **Suggestion**: Let `audioOutputConfiguration.voiceId` accept Polly voice ids (or add a `textOnly` output mode so text-only turns are billed as such).
 
 <!-- Add entries below as they happen. -->
