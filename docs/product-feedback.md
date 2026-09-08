@@ -32,6 +32,21 @@ Devpost asks, for every tool/API/SDK used: what we used it for, what worked well
 - **Onboarding**: Fine with an existing account; the model-access step surprises first-timers.
 - **Build again?**: Yes.
 
+## Amazon Nova 2 Sonic (Bedrock bidirectional streaming)
+
+- **Used for**: The live voice channel of the simulated Alexa+ host: microphone in, transcription, reasoning, calling HomeKeeper's MCP tools, barge-in.
+- **Worked well**: Tool use over the stream is solid and fast; the model called `troubleshoot` with the right appliance and error code from spoken input on the first try. `SPECULATIVE` text arrives before audio, which made swapping the voice possible. Endpointing sensitivity is a useful knob.
+- **Needs work**: Voice quality versus Polly generative (friction #8). No way to turn off audio output or pick a Polly voice. The Node SDK path needs `NodeHttp2Handler` and the initial events queued before `send()`, neither of which is in the Bedrock Runtime API reference; we found it in the samples repo.
+- **Onboarding**: Event schema docs are complete; the deadlock behaviour cost an hour.
+- **Build again?**: Yes as the ears and brain; not yet as the mouth.
+
+## Amazon Polly (generative engine)
+
+- **Used for**: The voice the user hears (Joanna, the classic Alexa voice), for both typed turns and Sonic-driven live turns.
+- **Worked well**: Generative Joanna is a clear step up from neural and from browser TTS; `say-as characters` handles error codes; PCM output slots straight into the Web Audio queue.
+- **Needs work**: PCM is capped at 16 kHz while Sonic emits 24 kHz, so the two paths differ in fidelity. No streaming synthesis for long sentences.
+- **Build again?**: Yes.
+
 ## Amazon Bedrock AgentCore Runtime (direct code deploy, Node.js 22)
 
 - **Used for**: Hosting the MCP server.

@@ -22,7 +22,7 @@ export type HostEvent =
   | { type: "error"; message: string }
   | { type: "done" };
 
-const SYSTEM_PROMPT = `You are Alexa+, a warm and efficient voice assistant in someone's home. The HomeKeeper add-on is connected: it remembers the household's appliances, reads their manuals, tracks maintenance and reorders parts.
+export const SYSTEM_PROMPT = `You are Alexa+, a warm and efficient voice assistant in someone's home. The HomeKeeper add-on is connected: it remembers the household's appliances, reads their manuals, tracks maintenance and reorders parts.
 
 Rules for speaking:
 - You are being spoken aloud. Keep replies to one to three short sentences. No lists, no markdown, no emoji.
@@ -185,7 +185,7 @@ function toBedrockTool(t: Tool): BedrockTool {
 }
 
 /** What the model sees: structured JSON when present, otherwise the text blocks. */
-function toModelContent(result: CallToolResult): ToolResultContentBlock[] {
+export function toModelContent(result: CallToolResult): ToolResultContentBlock[] {
   if (result.structuredContent) {
     // Strip large embedded fields the card renders but the model doesn't need verbatim.
     const trimmed = JSON.parse(JSON.stringify(result.structuredContent, (k, v) => (k === "excerpt" && typeof v === "string" ? v.slice(0, 400) : v)));
@@ -199,7 +199,7 @@ function toModelContent(result: CallToolResult): ToolResultContentBlock[] {
  * MCP Apps: the UI resource is declared on the tool definition
  * (`tools/list` → `_meta.ui.resourceUri`). A result may also carry one.
  */
-function uiResourceFor(tools: Tool[], name: string, result: CallToolResult): string | undefined {
+export function uiResourceFor(tools: Tool[], name: string, result: CallToolResult): string | undefined {
   const fromResult = (result._meta as { ui?: { resourceUri?: string } } | undefined)?.ui?.resourceUri;
   if (fromResult) return fromResult;
   const tool = tools.find((t) => t.name === name);

@@ -1,5 +1,6 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { mountApp } from "./apps.js";
+import { VoiceSession, type VoiceEvent } from "./voice.js";
 
 type HostEvent =
   | { type: "text"; text: string }
@@ -27,11 +28,20 @@ let busy = false;
 // ----------------------------------------------------------------- status
 async function loadStatus() {
   try {
-    const s = (await (await fetch("/api/status")).json()) as { tools: string[]; toolUi: Record<string, string>; mcpUrl: string; auth: string; model: string; mode: string; tts?: { voice: string; engine: string } };
+    const s = (await (await fetch("/api/status")).json()) as {
+      tools: string[];
+      toolUi: Record<string, string>;
+      mcpUrl: string;
+      auth: string;
+      model: string;
+      mode: string;
+      tts?: { voice: string; engine: string };
+      voice?: { model: string; voice: string; speaker: string };
+    };
     for (const [k, v] of Object.entries(s.toolUi ?? {})) toolUi.set(k, v);
     const target = s.mcpUrl.includes("bedrock-agentcore") ? "AgentCore Runtime" : s.mcpUrl;
     const brain = s.mode === "rules" ? "rules mode (no Bedrock)" : s.model.replace(/^[a-z]{2}\./, "").split(".").slice(-1)[0].split("-").slice(0, 3).join(" ");
-    const voice = s.tts ? ` · Polly ${s.tts.voice}` : "";
+    const voice = voiceSession ? ` · live: Nova 2 Sonic + ${s.voice?.speaker ?? "Polly"}` : s.tts ? ` · Polly ${s.tts.voice}` : "";
     status.textContent = `${s.tools.length} tools · ${target} · ${s.auth} · ${brain}${voice}`;
     status.classList.toggle("err", s.tools.length === 0);
     if (s.tools.length === 0) status.textContent = "MCP server unreachable (is it running on :3000?)";
@@ -155,41 +165,101 @@ function stopSpeaking() {
   if ("speechSynthesis" in window) speechSynthesis.cancel();
 }
 
-type SR = { start(): void; stop(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; lang: string; interimResults: boolean };
-const SpeechRecognitionCtor = (window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR }).SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SR }).webkitSpeechRecognition;
-let recognizer: SR | undefined;
-mic.addEventListener("click", () => {
-  if (!SpeechRecognitionCtor) {
-    alert("Speech recognition isn't available in this browser. Type instead.");
-    return;
+// ------------------------------------------------------- live voice (Sonic)
+// The mic button opens a continuous conversation with Amazon Nova 2 Sonic:
+// speech in, speech out, tool calls to the MCP server in between, barge-in.
+let voiceSession: VoiceSession | undefined;
+let voiceBubble: HTMLElement | undefined;
+
+function onVoiceEvent(ev: VoiceEvent) {
+  switch (ev.type) {
+    case "ready":
+      status.textContent = "listening… say something";
+      break;
+    case "transcript":
+      voiceBubble = undefined;
+      addUser(ev.text);
+      orb.classList.add("thinking");
+      break;
+    case "text":
+      orb.classList.remove("thinking");
+      if (voiceBubble) {
+        const b = voiceBubble.querySelector(".bubble")!;
+        b.textContent = `${b.textContent} ${ev.text}`.trim();
+        scroll();
+      } else voiceBubble = addAlexa(ev.text);
+      break;
+    case "turn_end":
+      voiceBubble = undefined;
+      orb.classList.remove("thinking");
+      break;
+    case "interrupted":
+      voiceBubble = undefined;
+      break;
+    case "tool_call":
+      pendingArgs.set(ev.id, ev.args);
+      addTool(ev.name, ev.args);
+      break;
+    case "tool_result": {
+      const args = pendingArgs.get(ev.id) ?? {};
+      pendingArgs.delete(ev.id);
+      if (ev.result.isError) addTool(ev.name, { error: firstText(ev.result) }, true);
+      else if (ev.uiResource) void addApp(ev.name, args, ev.result, ev.uiResource);
+      break;
+    }
+    case "elicit":
+      addElicit(ev.id, ev.message);
+      break;
+    case "error":
+      addAlexa(`Voice: ${ev.message}`);
+      break;
+    case "closed":
+      stopVoice();
+      break;
   }
-  if (recognizer) {
-    recognizer.stop();
-    return;
-  }
-  recognizer = new SpeechRecognitionCtor();
-  recognizer.lang = "en-US";
-  recognizer.interimResults = false;
+}
+
+async function startVoice() {
+  if (voiceSession) return;
+  stopSpeaking();
+  const session = new VoiceSession(onVoiceEvent, (speaking) => orb.classList.toggle("speaking", speaking));
+  voiceSession = session;
   mic.classList.add("on");
   orb.classList.add("listening");
-  recognizer.onresult = (e) => {
-    const text = e.results[0][0].transcript;
-    void send(text);
-  };
-  recognizer.onend = () => {
-    mic.classList.remove("on");
-    orb.classList.remove("listening");
-    recognizer = undefined;
-  };
-  recognizer.start();
-});
+  try {
+    await session.start();
+    void loadStatus();
+  } catch (err) {
+    addAlexa(`Couldn't start the microphone: ${(err as Error).message}`);
+    stopVoice();
+  }
+}
+
+function stopVoice() {
+  const s = voiceSession;
+  voiceSession = undefined;
+  voiceBubble = undefined;
+  mic.classList.remove("on");
+  orb.classList.remove("listening", "thinking", "speaking");
+  s?.stop();
+  void loadStatus();
+}
+
+mic.addEventListener("click", () => (voiceSession ? stopVoice() : void startVoice()));
 
 // ------------------------------------------------------------------- turn
 async function send(text: string) {
   if (busy || !text.trim()) return;
+  input.value = "";
+  if (voiceSession?.open) {
+    // Live voice session: Sonic takes typed text too and answers aloud.
+    addUser(text);
+    orb.classList.add("thinking");
+    voiceSession.sendText(text);
+    return;
+  }
   busy = true;
   stopSpeaking();
-  input.value = "";
   addUser(text);
   orb.classList.add("thinking");
   const thinking = addAlexa("…", true);
@@ -266,3 +336,4 @@ $<HTMLElement>("#suggestions").addEventListener("click", (e) => {
 });
 
 void loadStatus();
+setInterval(() => void loadStatus(), 10_000);

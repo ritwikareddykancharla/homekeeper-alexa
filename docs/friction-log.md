@@ -54,4 +54,33 @@ Format per Devpost: task attempted, steps taken, expected vs actual, severity, w
 - **Workaround**: Simulator doubles as an MCP Apps host.
 - **Suggestion**: Ship `basic-host` as an npm binary.
 
+## 6. AgentCore Runtime rewrites `Mcp-Session-Id`, breaking stateful MCP
+
+- **Task**: Run the server in stateful Streamable HTTP mode (needed for elicitation) on AgentCore Runtime.
+- **Steps**: Deployed, pointed the simulator at the invocation URL, watched requests after `initialize`.
+- **Expected**: The `Mcp-Session-Id` the server issued on `initialize` comes back on subsequent requests.
+- **Actual**: The runtime injects its own session id per request; the server saw unknown ids and returned 404, which made the client re-initialize in a loop.
+- **Severity**: Medium.
+- **Workaround**: `MCP_STATELESS=1` on the runtime; the server also serves unknown-session POSTs statelessly instead of 404ing. Elicitation degrades to the two-step confirm flow.
+- **Suggestion**: Document that AgentCore's MCP mode owns session identity (and use the runtime session id for affinity), or pass the server-issued id through untouched.
+
+## 7. Anthropic models need a one-time "use case" form, invisible from the API
+
+- **Task**: Call Claude Sonnet 4.5 via Converse from the simulator.
+- **Steps**: Enabled model access; first call failed with `ResourceNotFoundException: Model use case details have not been submitted for this account`.
+- **Expected**: Access enabled means the model is callable.
+- **Actual**: A separate form has to be submitted once per account. It is only surfaced in the console, but there is an API (`aws bedrock put-use-case-for-model-access`), which we used.
+- **Severity**: Low (once you know).
+- **Suggestion**: Return the CLI command in the error message.
+
+## 8. Nova 2 Sonic: great ears and brain, weak voice
+
+- **Task**: Give the simulated Alexa+ host a real voice channel.
+- **Steps**: Wired `InvokeModelWithBidirectionalStream` with tool use; streamed 16 kHz PCM from the browser, played 24 kHz PCM back.
+- **Expected**: One model for the whole voice loop.
+- **Actual**: ASR, turn detection, tool calling and barge-in all worked first try. But the synthesized voices (`tiffany`, `matthew`) sound noticeably worse than Polly's generative voices, and there is no way to select a Polly voice inside Sonic or to disable Sonic's audio output. Two smaller gotchas: `send()` deadlocks unless `sessionStart`/`promptStart` are already queued in the request body, and `audioOutputConfiguration` is mandatory even if you never play the audio.
+- **Severity**: Medium for anything user-facing.
+- **Workaround**: Discard Sonic's audio, speak its `SPECULATIVE` text sentence by sentence with Polly generative Joanna (`SONIC_SPEAKER=polly`). Costs a few hundred ms of latency and pays for speech tokens nobody hears.
+- **Suggestion**: Let `audioOutputConfiguration.voiceId` accept Polly voice ids (or add a `textOnly` output mode so text-only turns are billed as such).
+
 <!-- Add entries below as they happen. -->

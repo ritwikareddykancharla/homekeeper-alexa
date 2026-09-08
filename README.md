@@ -35,7 +35,7 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server        -->  Bed
 - **MCP Apps**: tools declare `_meta.ui.resourceUri` so Alexa+ (and any MCP Apps host) renders rich cards: appliance carousel, troubleshooting with the manual excerpt, maintenance timeline, order confirmation. Views are single-file HTML served as `ui://homekeeper/*.html` resources.
 - **Grounded troubleshooting**: manuals are chunked by section, embedded (Titan Text Embeddings V2), and retrieved with a hybrid of cosine similarity and keyword scoring, so exact error codes like `E24` always hit. Claude synthesises the answer from the retrieved chunks only. Without Bedrock the same pipeline falls back to keyword retrieval and rule-based answers.
 - **Elicitation**: order confirmation goes through MCP elicitation when the host supports it; otherwise the tool returns a quote and expects a second call with `confirm=true`. Ambiguous appliance references return candidates instead of guessing.
-- **Simulated Alexa+ host** (`packages/simulator`): a web app that speaks to the same server exactly as Alexa+ would: Bedrock Converse tool loop, MCP client (SigV4-signed for AgentCore), MCP Apps rendering via `AppBridge` in sandboxed iframes, browser speech recognition in, Amazon Polly generative voice out. Falls back to a rule-based intent router if Bedrock is unreachable. This is the demo surface while the Alexa+ MCP Toolkit is in Private Preview.
+- **Simulated Alexa+ host** (`packages/simulator`): a web app that speaks to the same server exactly as Alexa+ would: Bedrock Converse tool loop, MCP client (SigV4-signed for AgentCore), MCP Apps rendering via `AppBridge` in sandboxed iframes. Two ways to talk to it: typed turns go through Bedrock Converse and are spoken with Polly; the mic opens a live voice session with **Amazon Nova 2 Sonic** (speech in, reasoning, MCP tool calls and barge-in in one bidirectional stream), with each sentence spoken by Polly generative Joanna. Falls back to a rule-based intent router if Bedrock is unreachable. This is the demo surface while the Alexa+ MCP Toolkit is in Private Preview.
 
 
 
@@ -108,7 +108,8 @@ Useful environment variables (all optional):
 | `MCP_URL` | simulator | MCP endpoint (local or AgentCore invocation URL) |
 | `MCP_AUTH` | simulator | `none`, `sigv4` (auto for AgentCore URLs) or `bearer` |
 | `HOST_MODE=rules` | simulator | Skip Bedrock and use the intent router |
-| `POLLY_VOICE`, `POLLY_ENGINE` | simulator | Spoken replies: Polly voice (default `Danielle`) and engine (default `generative`) |
+| `POLLY_VOICE`, `POLLY_ENGINE` | simulator | Spoken replies: Polly voice (default `Joanna`) and engine (default `generative`) |
+| `SONIC_MODEL_ID`, `SONIC_VOICE`, `SONIC_SPEAKER` | simulator | Live voice: Nova 2 Sonic model, its voice, and who the user hears (`polly` default, or `sonic`) |
 
 Inspect the server with the MCP Inspector:
 
@@ -163,7 +164,8 @@ Alexa+ introspects the tools, registers the add-on, and you can test in the web 
 | Amazon Bedrock (Claude Sonnet 4.5, Converse API) | Tool-side reasoning: maintenance schedule refinement, grounded troubleshooting synthesis; host-side reasoning in the simulator |
 | Amazon Bedrock (Titan Text Embeddings V2) | Manual chunk embeddings for retrieval                                                                        |
 | Amazon Bedrock AgentCore Runtime | Hosting the MCP server (MCP protocol mode, Node.js 22 direct code deploy, session affinity)                          |
-| Amazon Polly (generative voices) | Spoken replies in the simulated Alexa+ host, with SSML so error codes are read letter by letter                        |
+| Amazon Bedrock (Nova 2 Sonic)    | Live voice in the simulated host: speech recognition, reasoning, MCP tool calling and barge-in over one bidirectional stream |
+| Amazon Polly (generative Joanna) | The voice the user hears, for both typed and live turns, with SSML so error codes are read letter by letter            |
 | Amazon DynamoDB                  | Per-household appliances, schedules, maintenance history, orders (single-table)                                       |
 | Amazon S3                        | Manual chunks with embeddings                                                                                         |
 | Amazon Cognito (optional)        | JWT issuer for OAuth-protected inbound auth                                                                           |
@@ -181,7 +183,8 @@ Active development for the hackathon (deadline Oct 23, 2026).
 - [x] Grounded troubleshooting: manual chunking, hybrid retrieval (Bedrock embeddings + keyword), bundled sample manuals
 - [x] Order confirmation via MCP elicitation, with two-step fallback for hosts without it
 - [x] MCP App views: appliance carousel, troubleshoot card, maintenance timeline, order card
-- [x] Simulated Alexa+ host (web app): Bedrock-backed reasoning with rules fallback, MCP client, MCP Apps rendering, voice in/out
+- [x] Simulated Alexa+ host (web app): Bedrock-backed reasoning with rules fallback, MCP client, MCP Apps rendering
+- [x] Live voice: Nova 2 Sonic bidirectional stream driving MCP tools, Polly generative voice out, barge-in
 - [x] AWS CDK: DynamoDB, S3, IAM, Bedrock AgentCore Runtime (Node.js 22 direct code deploy), optional Cognito
 - [x] Local end-to-end: utterance to tool call to grounded answer to rendered card, including elicitation round-trip
 - [ ] Deploy to AWS and test against the hosted server (waiting on account credentials)

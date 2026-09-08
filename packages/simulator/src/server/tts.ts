@@ -2,20 +2,26 @@ import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/cli
 import { config } from "./config.js";
 
 /**
- * Text to speech with Amazon Polly generative voices (the neural family Alexa
- * itself speaks with). The browser falls back to speechSynthesis if this fails.
+ * Text to speech for typed turns with Amazon Polly. Joanna is the voice the
+ * original US Alexa was built from, so it is the "classic Alexa" sound; the
+ * generative engine is its newest rendition. The browser falls back to
+ * speechSynthesis if this fails.
  *
- *   POLLY_VOICE   Danielle | Joanna | Ruth | Salli | Matthew | Stephen | Tiffany  (default Danielle)
+ *   POLLY_VOICE   Joanna | Danielle | Ruth | Salli | Matthew | Stephen | Tiffany  (default Joanna)
  *   POLLY_ENGINE  generative | neural | long-form                                   (default generative)
  */
 const polly = new PollyClient({ region: config.region });
-const voice = (process.env.POLLY_VOICE ?? "Danielle") as VoiceId;
+const voice = (process.env.POLLY_VOICE ?? "Joanna") as VoiceId;
 const engine = (process.env.POLLY_ENGINE ?? "generative") as "generative" | "neural" | "long-form";
 
 const cache = new Map<string, Uint8Array>();
 
-export async function synthesize(text: string): Promise<Uint8Array> {
-  const key = `${voice}:${engine}:${text}`;
+/** Polly's PCM output is 16-bit mono at this rate (pcm supports 8000/16000 only). */
+export const PCM_RATE = 16000;
+
+/** Synthesize `text`; "mp3" for the browser <audio> path, "pcm" for the live voice channel. */
+export async function synthesize(text: string, format: "mp3" | "pcm" = "mp3"): Promise<Uint8Array> {
+  const key = `${voice}:${engine}:${format}:${text}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -25,7 +31,8 @@ export async function synthesize(text: string): Promise<Uint8Array> {
     new SynthesizeSpeechCommand({
       Engine: engine,
       VoiceId: voice,
-      OutputFormat: "mp3",
+      OutputFormat: format,
+      SampleRate: format === "pcm" ? String(PCM_RATE) : undefined,
       TextType: "ssml",
       Text: ssml
     })

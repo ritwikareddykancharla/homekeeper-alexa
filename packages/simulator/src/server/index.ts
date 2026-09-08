@@ -2,21 +2,20 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
 import type { ElicitResult } from "@modelcontextprotocol/sdk/types.js";
+import { WebSocketServer, type WebSocket } from "ws";
 import { config } from "./config.js";
 import { HomeKeeperClient } from "./mcp-client.js";
 import { AlexaHost, type HostEvent } from "./host.js";
 import { synthesize, ttsInfo } from "./tts.js";
+import { elicitVia, pendingElicits } from "./elicit.js";
+import { SonicSession, sonicInfo, type VoiceEvent } from "./sonic.js";
 
 const WEB_DIST = fileURLToPath(new URL("../../dist/web", import.meta.url));
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon" };
 
 const mcp = new HomeKeeperClient();
 const host = new AlexaHost(mcp);
-
-/** Elicitation requests waiting on a browser answer. */
-const pendingElicits = new Map<string, (r: ElicitResult) => void>();
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
@@ -39,6 +38,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       model: config.modelId,
       mode: host.mode,
       tts: ttsInfo,
+      voice: sonicInfo,
       region: config.region,
       household: config.householdId,
       tools: mcp.listTools().map((t) => t.name),
@@ -62,16 +62,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
     const send = (ev: HostEvent) => res.write(`data: ${JSON.stringify(ev)}\n\n`);
 
     // Route elicitation (server asks user to confirm) through this response stream.
-    mcp.setElicitHandler((params) => {
-      const id = randomUUID();
-      send({ type: "elicit", id, message: params.message, schema: (params as { requestedSchema?: unknown }).requestedSchema });
-      return new Promise<ElicitResult>((resolve) => {
-        pendingElicits.set(id, resolve);
-        setTimeout(() => {
-          if (pendingElicits.delete(id)) resolve({ action: "cancel" });
-        }, 120_000);
-      });
-    });
+    mcp.setElicitHandler(elicitVia(send));
 
     try {
       for await (const ev of host.turn(sessionId, text)) send(ev);
@@ -175,11 +166,45 @@ const server = createServer(async (req, res) => {
   }
 });
 
+// ---- live voice: browser mic <-> Nova 2 Sonic <-> MCP tools
+const wss = new WebSocketServer({ server, path: "/ws/voice" });
+wss.on("connection", (ws: WebSocket) => {
+  let session: SonicSession | undefined;
+  const send = (ev: VoiceEvent) => {
+    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(ev));
+  };
+  ws.on("message", async (data, isBinary) => {
+    if (isBinary) {
+      session?.sendAudio(data as Buffer);
+      return;
+    }
+    const msg = JSON.parse(data.toString()) as { type: string; text?: string };
+    if (msg.type === "start" && !session) {
+      session = new SonicSession(mcp, send);
+      try {
+        await session.start();
+        console.log(`[sonic] session started (${sonicInfo.model}, voice ${sonicInfo.voice})`);
+      } catch (err) {
+        console.error(`[sonic] could not start: ${(err as Error).message}`);
+        send({ type: "error", message: `Nova 2 Sonic unavailable: ${(err as Error).message}` });
+        send({ type: "closed", reason: "start failed" });
+        session = undefined;
+      }
+    } else if (msg.type === "text" && msg.text) {
+      session?.sendUserText(msg.text);
+    } else if (msg.type === "stop") {
+      session?.close("client stop");
+      session = undefined;
+    }
+  });
+  ws.on("close", () => session?.close("socket closed"));
+});
+
 await mcp.connect().catch((err) => {
   console.error(`[mcp] could not connect to ${config.mcpUrl}: ${(err as Error).message}`);
   console.error("[mcp] start the HomeKeeper server (npm run dev -w @homekeeper/server) or set MCP_URL; will retry on first request");
 });
 
 server.listen(config.port, "0.0.0.0", () => {
-  console.log(`Alexa+ simulator API on http://localhost:${config.port}  (model ${config.modelId}, region ${config.region})`);
+  console.log(`Alexa+ simulator API on http://localhost:${config.port}  (text: ${config.modelId} + Polly ${ttsInfo.voice}; voice: ${sonicInfo.model}/${sonicInfo.voice}; region ${config.region})`);
 });

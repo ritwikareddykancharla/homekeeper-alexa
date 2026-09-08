@@ -18,11 +18,14 @@
     "@aws-sdk/credential-providers": "^3.900.0",
     "@modelcontextprotocol/ext-apps": "^1.7.5",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@smithy/node-http-handler": "^4.12.1",
     "@smithy/protocol-http": "^5.1.0",
     "@smithy/signature-v4": "^5.1.0",
+    "ws": "^8.21.3",
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "vite": "^7.1.0"
   }
 }
