@@ -64,7 +64,20 @@ async function loadVoices() {
       voices: Array<{ id: string; name: string; gender: string; engine: string }>;
     };
     voicePick.replaceChildren();
-    const label: Record<string, string> = { generative: "generative", "long-form": "long-form · most expressive", neural: "neural" };
+    // Shortlist from a side-by-side listen: warmest and most natural of the generative voices.
+    const PICKS = ["Ruth", "Matthew", "Stephen"];
+    const picks = document.createElement("optgroup");
+    picks.label = "picks";
+    for (const id of PICKS) {
+      const vo = v.voices.find((x) => x.engine === "generative" && x.id === id);
+      if (!vo) continue;
+      const o = document.createElement("option");
+      o.value = `generative:${vo.id}`;
+      o.textContent = `${vo.name} (${vo.gender[0] ?? ""})`;
+      picks.appendChild(o);
+    }
+    if (picks.children.length) voicePick.appendChild(picks);
+    const label: Record<string, string> = { generative: "all generative", "long-form": "long-form · most expressive", neural: "neural" };
     for (const engine of ["generative", "long-form", "neural"]) {
       const group = document.createElement("optgroup");
       group.label = label[engine] ?? engine;
