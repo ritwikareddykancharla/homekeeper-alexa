@@ -1,0 +1,10 @@
+{
+  "HomeKeeper": {
+    "TableName": "HomeKeeper-HouseholdFD44A63E-1DII45YC64N68",
+    "ManualsBucket": "homekeeper-manualse4923f09-pzkm9wgz8rac",
+    "McpUrlHint": "https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/{url-encoded RuntimeArn}/invocations?qualifier=DEFAULT",
+    "InboundAuth": "iam",
+    "RuntimeArn": "arn:aws:bedrock-agentcore:us-east-1:796330847946:runtime/homekeeper_mcp-4u76IK77S2",
+    "RuntimeId": "homekeeper_mcp-4u76IK77S2"
+  }
+}

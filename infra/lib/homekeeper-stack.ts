@@ -152,6 +152,9 @@ export class HomeKeeperStack extends Stack {
       authorizerConfiguration,
       environmentVariables: {
         PORT: "8000",
+        // AgentCore assigns Mcp-Session-Id per request and isolates clients by
+        // runtime session instead, so the MCP layer must be stateless here.
+        MCP_STATELESS: "1",
         TABLE_NAME: table.tableName,
         MANUALS_BUCKET: manuals.bucketName,
         BEDROCK_MODEL_ID: props.bedrockModelId ?? "us.anthropic.claude-sonnet-4-5-20250929-v1:0",

@@ -64,7 +64,7 @@ export function createHttpServer(opts: HttpOptions) {
   }, 60_000);
   evict.unref();
 
-  async function handleStateless(req: IncomingMessage, res: ServerResponse) {
+  async function handleStateless(req: IncomingMessage, res: ServerResponse, parsedBody?: unknown) {
     const server = opts.createServer();
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
@@ -72,7 +72,7 @@ export function createHttpServer(opts: HttpOptions) {
       void server.close();
     });
     await server.connect(transport);
-    const body = req.method === "POST" ? await readJson(req) : undefined;
+    const body = parsedBody ?? (req.method === "POST" ? await readJson(req) : undefined);
     await transport.handleRequest(req, res, body);
   }
 
@@ -114,13 +114,33 @@ export function createHttpServer(opts: HttpOptions) {
       return;
     }
 
-    if (sessionId) {
-      // Unknown or expired session: the client must re-initialize.
-      json(res, 404, { jsonrpc: "2.0", error: { code: -32001, message: "Session not found" }, id: null });
+    if (sessionId && req.method === "POST") {
+      // Unknown session id on a real request. Either the session expired, or a
+      // platform in front of us (Bedrock AgentCore) rewrites Mcp-Session-Id per
+      // request. Rather than 404 and force a re-initialize loop, serve the
+      // request statelessly; only elicitation is lost, and tools fall back to
+      // their two-step confirm flow.
+      if (!warnedUnknownSession) {
+        warnedUnknownSession = true;
+        log(`request for unknown session ${sessionId}; serving statelessly (set MCP_STATELESS=1 if this host rewrites session ids)`);
+      }
+      await handleStateless(req, res, body);
+      return;
+    }
+    if (sessionId && req.method === "GET") {
+      // No standalone SSE stream for a session we don't know; clients treat 405 as "not supported".
+      res.writeHead(405, { Allow: "POST, DELETE", ...CORS_HEADERS });
+      res.end();
+      return;
+    }
+    if (sessionId && req.method === "DELETE") {
+      res.writeHead(200, CORS_HEADERS);
+      res.end();
       return;
     }
     json(res, 400, { jsonrpc: "2.0", error: { code: -32000, message: "Bad Request: missing session or not an initialize request" }, id: null });
   }
+  let warnedUnknownSession = false;
 
   const httpServer = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");

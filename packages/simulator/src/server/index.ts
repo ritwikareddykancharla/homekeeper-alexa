@@ -7,6 +7,7 @@ import type { ElicitResult } from "@modelcontextprotocol/sdk/types.js";
 import { config } from "./config.js";
 import { HomeKeeperClient } from "./mcp-client.js";
 import { AlexaHost, type HostEvent } from "./host.js";
+import { synthesize, ttsInfo } from "./tts.js";
 
 const WEB_DIST = fileURLToPath(new URL("../../dist/web", import.meta.url));
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon" };
@@ -37,6 +38,7 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       auth: config.mcpAuth,
       model: config.modelId,
       mode: host.mode,
+      tts: ttsInfo,
       region: config.region,
       household: config.householdId,
       tools: mcp.listTools().map((t) => t.name),
@@ -115,6 +117,22 @@ async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): P
       res.end(first?.text ?? "");
     } catch (err) {
       return json(res, 500, { error: (err as Error).message });
+    }
+    return;
+  }
+
+  // ---- speech: Amazon Polly generative voice
+  if (url.pathname === "/api/tts" && req.method === "POST") {
+    const body = await readJson(req);
+    const text = String(body.text ?? "").slice(0, 1500);
+    if (!text) return json(res, 400, { error: "text required" });
+    try {
+      const audio = await synthesize(text);
+      res.writeHead(200, { "content-type": "audio/mpeg", "content-length": audio.byteLength, "cache-control": "no-store" });
+      res.end(Buffer.from(audio));
+    } catch (err) {
+      console.warn(`[tts] Polly failed: ${(err as Error).message}`);
+      return json(res, 502, { error: (err as Error).message });
     }
     return;
   }

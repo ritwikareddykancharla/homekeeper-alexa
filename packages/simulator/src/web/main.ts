@@ -27,11 +27,12 @@ let busy = false;
 // ----------------------------------------------------------------- status
 async function loadStatus() {
   try {
-    const s = (await (await fetch("/api/status")).json()) as { tools: string[]; toolUi: Record<string, string>; mcpUrl: string; auth: string; model: string; mode: string };
+    const s = (await (await fetch("/api/status")).json()) as { tools: string[]; toolUi: Record<string, string>; mcpUrl: string; auth: string; model: string; mode: string; tts?: { voice: string; engine: string } };
     for (const [k, v] of Object.entries(s.toolUi ?? {})) toolUi.set(k, v);
     const target = s.mcpUrl.includes("bedrock-agentcore") ? "AgentCore Runtime" : s.mcpUrl;
     const brain = s.mode === "rules" ? "rules mode (no Bedrock)" : s.model.replace(/^[a-z]{2}\./, "").split(".").slice(-1)[0].split("-").slice(0, 3).join(" ");
-    status.textContent = `${s.tools.length} tools · ${target} · ${s.auth} · ${brain}`;
+    const voice = s.tts ? ` · Polly ${s.tts.voice}` : "";
+    status.textContent = `${s.tools.length} tools · ${target} · ${s.auth} · ${brain}${voice}`;
     status.classList.toggle("err", s.tools.length === 0);
     if (s.tools.length === 0) status.textContent = "MCP server unreachable (is it running on :3000?)";
   } catch {
@@ -109,13 +110,36 @@ function addElicit(id: string, message: string) {
   el.querySelector(".no")!.addEventListener("click", () => void answer("decline"));
   transcript.appendChild(el);
   scroll();
-  speak(message);
+  void speak(message);
 }
 
 // ------------------------------------------------------------------ voice
-function speak(text: string) {
-  if (!tts.checked || !("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
+let player: HTMLAudioElement | undefined;
+let pollyOk = true;
+
+/** Speak with Amazon Polly (generative voice) via the API; fall back to the browser voice. */
+async function speak(text: string) {
+  if (!tts.checked) return;
+  stopSpeaking();
+  if (pollyOk) {
+    try {
+      const res = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+      if (!res.ok) throw new Error(`tts ${res.status}`);
+      const url = URL.createObjectURL(await res.blob());
+      player = new Audio(url);
+      player.onplay = () => orb.classList.add("speaking");
+      player.onended = player.onpause = () => {
+        orb.classList.remove("speaking");
+        URL.revokeObjectURL(url);
+      };
+      await player.play();
+      return;
+    } catch (err) {
+      console.warn("Polly unavailable, using browser voice:", err);
+      pollyOk = false;
+    }
+  }
+  if (!("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 1.05;
   const voices = speechSynthesis.getVoices();
@@ -123,6 +147,12 @@ function speak(text: string) {
   u.onstart = () => orb.classList.add("speaking");
   u.onend = () => orb.classList.remove("speaking");
   speechSynthesis.speak(u);
+}
+
+function stopSpeaking() {
+  player?.pause();
+  player = undefined;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
 }
 
 type SR = { start(): void; stop(): void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; lang: string; interimResults: boolean };
@@ -158,6 +188,7 @@ mic.addEventListener("click", () => {
 async function send(text: string) {
   if (busy || !text.trim()) return;
   busy = true;
+  stopSpeaking();
   input.value = "";
   addUser(text);
   orb.classList.add("thinking");
@@ -209,7 +240,7 @@ async function send(text: string) {
         }
       }
     }
-    if (spoke) speak(spoke);
+    if (spoke) void speak(spoke);
   } catch (err) {
     thinking.remove();
     addAlexa(`I couldn't reach the simulator API: ${(err as Error).message}`);
