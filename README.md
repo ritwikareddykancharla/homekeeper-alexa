@@ -16,7 +16,7 @@ Every household owns 20 to 40 appliances and devices, each with a manual nobody 
 HomeKeeper does both:
 
 - **Remembers.** Appliances, purchase dates, warranties, and maintenance history persist per household across every conversation.
-- **Reads.** Manuals are ingested into a Bedrock Knowledge Base, so troubleshooting answers are grounded in the actual document, with the relevant page shown as a card.
+- **Reads.** Manuals are chunked, embedded with Amazon Bedrock, and retrieved per question, so troubleshooting answers are grounded in the actual document, with the source excerpt shown as a card.
 - **Plans.** When you register an appliance, HomeKeeper derives its maintenance schedule (filters, descaling, inspections) and surfaces what's due.
 - **Acts.** Consumables are linked to products, so "order the fridge filter" is one turn.
 
@@ -25,16 +25,17 @@ HomeKeeper does both:
 ## How it works
 
 ```
-Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (RAG, reasoning)
-        |                                        |                        DynamoDB (household state)
-        |                                        |                        S3 + Bedrock Knowledge Base (manuals)
+Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server        -->  Bedrock (Claude: reasoning; Titan: embeddings)
+        |                                  on Bedrock AgentCore Runtime      DynamoDB (household state)
+        |                                        |                           S3 (manual chunks + embeddings)
         +-- renders MCP App cards <--------------+
 ```
 
-- **MCP server**: TypeScript, `@modelcontextprotocol/sdk`, MCP spec **2025-11-25**, **Streamable HTTP** transport, stateless-compatible so it runs behind load balancers and on Bedrock AgentCore Runtime.
-- **MCP Apps**: tool results carry `_meta.ui.resourceUri` so Alexa+ (and any MCP Apps host) renders rich cards: appliance carousel, manual page viewer, maintenance timeline, reorder confirmation.
-- **Elicitation**: when a request is ambiguous ("the filter" in a house with three filters), the server asks instead of guessing.
-- **Simulated Alexa+ host**: a web app that speaks to the same server exactly as Alexa+ would (Bedrock-backed reasoning, MCP client, MCP Apps rendering). This is the demo surface while the Alexa+ MCP Toolkit is in Private Preview.
+- **MCP server**: TypeScript, `@modelcontextprotocol/sdk`, MCP spec **2025-11-25**, **Streamable HTTP** transport. Runs stateful (sessions, needed for elicitation) or stateless; honours platform-injected session ids so it runs unchanged on Bedrock AgentCore Runtime.
+- **MCP Apps**: tools declare `_meta.ui.resourceUri` so Alexa+ (and any MCP Apps host) renders rich cards: appliance carousel, troubleshooting with the manual excerpt, maintenance timeline, order confirmation. Views are single-file HTML served as `ui://homekeeper/*.html` resources.
+- **Grounded troubleshooting**: manuals are chunked by section, embedded (Titan Text Embeddings V2), and retrieved with a hybrid of cosine similarity and keyword scoring, so exact error codes like `E24` always hit. Claude synthesises the answer from the retrieved chunks only. Without Bedrock the same pipeline falls back to keyword retrieval and rule-based answers.
+- **Elicitation**: order confirmation goes through MCP elicitation when the host supports it; otherwise the tool returns a quote and expects a second call with `confirm=true`. Ambiguous appliance references return candidates instead of guessing.
+- **Simulated Alexa+ host** (`packages/simulator`): a web app that speaks to the same server exactly as Alexa+ would: Bedrock Converse tool loop, MCP client (SigV4-signed for AgentCore), MCP Apps rendering via `AppBridge` in sandboxed iframes, browser speech in and out. Falls back to a rule-based intent router if Bedrock is unreachable. This is the demo surface while the Alexa+ MCP Toolkit is in Private Preview.
 
 
 
@@ -51,6 +52,10 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (
 | `log_maintenance`    | Record a completed task, resets its schedule.                                              |
 | `reorder_consumable` | Find and order the matching filter / part / consumable.                                    |
 | `warranty_status`    | Is it still covered, and what do I need to claim.                                          |
+| `maintenance_history`| What has been done, when.                                                                  |
+| `remove_appliance`   | Forget an appliance.                                                                       |
+
+Plus a `weekly_checkup` prompt and four `ui://homekeeper/*.html` MCP App resources.
 
 
 
@@ -61,9 +66,10 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (
 .
 ├── packages/
 │   ├── server/        # HomeKeeper MCP server (TypeScript, Streamable HTTP)
-│   ├── ui/            # MCP App views (cards rendered by the host)
-│   └── simulator/     # Simulated Alexa+ host web app
-├── infra/             # AWS CDK: DynamoDB, S3, Bedrock Knowledge Base, AgentCore Runtime
+│   │   └── src/knowledge/manuals/   # bundled sample manuals (Bosch, Samsung, Keurig, LG)
+│   ├── ui/            # MCP App views (single-file HTML cards rendered by the host)
+│   └── simulator/     # Simulated Alexa+ host: Node API (Bedrock + MCP client) and Vite web UI
+├── infra/             # AWS CDK: DynamoDB, S3, IAM, Bedrock AgentCore Runtime, optional Cognito
 ├── docs/
 │   ├── friction-log.md
 │   └── product-feedback.md
@@ -75,12 +81,33 @@ Alexa+ (MCP client)  --Streamable HTTP-->  HomeKeeper MCP server  -->  Bedrock (
 
 ## Running locally
 
-Prerequisites: Node.js 22+, an AWS profile with Bedrock access (us-east-1).
+Prerequisites: Node.js 22+. AWS credentials with Bedrock access are optional locally; without them the server and simulator run in rule-based mode (keyword retrieval, no LLM), which is enough to see every tool and card work.
 
 ```bash
 npm install
-npm run dev            # starts the MCP server on http://localhost:3000/mcp and the simulator on http://localhost:5173
+npm run dev            # MCP server on http://localhost:3000/mcp, simulator UI on http://localhost:5173
 ```
+
+With Bedrock (set `AWS_PROFILE`/`AWS_REGION`; enable Claude Sonnet 4.5 and Titan Text Embeddings V2 in the Bedrock console):
+
+```bash
+AWS_PROFILE=hackathon AWS_REGION=us-east-1 npm run dev
+```
+
+Useful environment variables (all optional):
+
+| Variable | Where | Meaning |
+| --- | --- | --- |
+| `PORT` | server | Listen port (default 3000; AgentCore uses 8000) |
+| `MCP_STATELESS=1` | server | One transport per request instead of sessions |
+| `BEDROCK_DISABLED=1` | server | Force rule-based mode |
+| `BEDROCK_MODEL_ID`, `BEDROCK_EMBED_MODEL_ID` | server, simulator | Model overrides |
+| `TABLE_NAME`, `MANUALS_BUCKET` | server | Use DynamoDB + S3 instead of the in-memory store |
+| `DATA_FILE` | server | JSON file for the in-memory store (`none` to disable) |
+| `SEED_DEMO=1` | server | Seed the demo household on first start |
+| `MCP_URL` | simulator | MCP endpoint (local or AgentCore invocation URL) |
+| `MCP_AUTH` | simulator | `none`, `sigv4` (auto for AgentCore URLs) or `bearer` |
+| `HOST_MODE=rules` | simulator | Skip Bedrock and use the intent router |
 
 Inspect the server with the MCP Inspector:
 
@@ -88,19 +115,33 @@ Inspect the server with the MCP Inspector:
 npx @modelcontextprotocol/inspector http://localhost:3000/mcp
 ```
 
-Detailed setup, deployment, and Alexa+ add-on registration instructions will land in `docs/` as the project takes shape.
-
 ## Deploying to AWS
 
-Infrastructure is defined in `infra/` with the AWS CDK.
+Infrastructure is defined in `infra/` with the AWS CDK. The MCP server is deployed to **Amazon Bedrock AgentCore Runtime** as a Node.js 22 direct-code zip (no container build).
 
 ```bash
-cd infra
-npx cdk bootstrap --profile <your-profile>
-npx cdk deploy --profile <your-profile>
+export AWS_PROFILE=hackathon AWS_REGION=us-east-1
+npx cdk bootstrap -a "npx tsx infra/bin/app.ts"     # once per account/region
+npm run deploy                                      # builds UI + server bundle, then cdk deploy
 ```
 
-This provisions DynamoDB (household state), S3 + Bedrock Knowledge Base (manuals), and hosts the MCP server on Bedrock AgentCore Runtime behind HTTPS.
+Outputs include the runtime ARN; the MCP endpoint is
+
+```
+https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/<url-encoded RuntimeArn>/invocations?qualifier=DEFAULT
+```
+
+By default inbound auth is IAM (SigV4). For an OAuth-protected endpoint (what Alexa+ account linking expects), deploy with `-c auth=jwt` to add a Cognito user pool whose client-credentials tokens the runtime accepts:
+
+```bash
+npm run deploy -w @homekeeper/infra -- -c auth=jwt
+```
+
+Point the simulator at the hosted server:
+
+```bash
+MCP_URL="https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/<encoded-arn>/invocations?qualifier=DEFAULT" npm run dev -w @homekeeper/simulator
+```
 
 ## Connecting to Alexa+
 
@@ -118,11 +159,12 @@ Alexa+ introspects the tools, registers the add-on, and you can test in the web 
 
 | Service                          | Role                                                                                                                  |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Amazon Bedrock (Claude)          | Tool-side reasoning: maintenance schedule derivation, troubleshooting synthesis; host-side reasoning in the simulator |
-| Amazon Bedrock Knowledge Bases   | Manual ingestion, chunking, embedding, and retrieval                                                                  |
-| Amazon Bedrock AgentCore Runtime | Hosting the MCP server (Streamable HTTP, session-aware)                                                               |
-| Amazon DynamoDB                  | Per-household appliances, schedules, maintenance history                                                              |
-| Amazon S3                        | Manual storage                                                                                                        |
+| Amazon Bedrock (Claude Sonnet 4.5, Converse API) | Tool-side reasoning: maintenance schedule refinement, grounded troubleshooting synthesis; host-side reasoning in the simulator |
+| Amazon Bedrock (Titan Text Embeddings V2) | Manual chunk embeddings for retrieval                                                                        |
+| Amazon Bedrock AgentCore Runtime | Hosting the MCP server (MCP protocol mode, Node.js 22 direct code deploy, session affinity)                          |
+| Amazon DynamoDB                  | Per-household appliances, schedules, maintenance history, orders (single-table)                                       |
+| Amazon S3                        | Manual chunks with embeddings                                                                                         |
+| Amazon Cognito (optional)        | JWT issuer for OAuth-protected inbound auth                                                                           |
 | AWS CDK                          | Infrastructure as code                                                                                                |
 
 
@@ -136,12 +178,13 @@ Active development for the hackathon (deadline Oct 23, 2026).
 - [x] Household state: appliances, derived maintenance schedules, logs, orders (in-memory + DynamoDB/S3 stores)
 - [x] Grounded troubleshooting: manual chunking, hybrid retrieval (Bedrock embeddings + keyword), bundled sample manuals
 - [x] Order confirmation via MCP elicitation, with two-step fallback for hosts without it
-- [ ] MCP App views: appliance carousel, troubleshoot card, maintenance timeline, order card
-- [ ] Simulated Alexa+ host (web app): Bedrock-backed reasoning, MCP client, MCP Apps rendering, voice in/out
-- [ ] AWS CDK: DynamoDB, S3, Bedrock AgentCore Runtime (Node.js 22 direct code deploy)
-- [ ] Deploy, end-to-end test against the hosted server
+- [x] MCP App views: appliance carousel, troubleshoot card, maintenance timeline, order card
+- [x] Simulated Alexa+ host (web app): Bedrock-backed reasoning with rules fallback, MCP client, MCP Apps rendering, voice in/out
+- [x] AWS CDK: DynamoDB, S3, IAM, Bedrock AgentCore Runtime (Node.js 22 direct code deploy), optional Cognito
+- [x] Local end-to-end: utterance to tool call to grounded answer to rendered card, including elicitation round-trip
+- [ ] Deploy to AWS and test against the hosted server (waiting on account credentials)
 - [ ] Alexa+ MCP Toolkit registration (`alexa-ai new mcp` / `alexa-ai deploy`) once Private Preview access is granted
-- [ ] Demo video, friction log, product feedback (`docs/`)
+- [ ] Demo video; finalize [friction log](docs/friction-log.md) and [product feedback](docs/product-feedback.md)
 
 ## License
 

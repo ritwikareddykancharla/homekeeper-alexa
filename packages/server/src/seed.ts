@@ -25,12 +25,39 @@ export async function seedDemoHousehold(service: HomeKeeperService, householdId:
 
   for (const s of seeds) await service.registerAppliance(householdId, s);
 
-  // Make the schedule feel lived-in: some tasks done recently, so not everything is overdue.
+  // Make the schedule feel lived-in. Log recent maintenance so the timeline shows a
+  // believable mix: a couple overdue, a few due soon, most fine.
   const all = await service.listAppliances(householdId);
-  const fridge = all.find((a) => a.brand === "Samsung");
-  const washer = all.find((a) => a.brand === "LG");
-  if (fridge) await service.logMaintenance(householdId, fridge, "Wipe door seals", "Looked fine", new Date(Date.now() - 20 * 86400000).toISOString());
-  if (washer) await service.logMaintenance(householdId, washer, "Run tub clean cycle", undefined, new Date(Date.now() - 10 * 86400000).toISOString());
+  const by = (brand: string) => all.find((a) => a.brand === brand);
+  const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+  const done: Array<[string, string, number]> = [
+    // dishwasher: filter due in ~3 days (30d interval), rest fine
+    ["Bosch", "Clean the filter", 27],
+    ["Bosch", "Run a cleaning cycle", 20],
+    ["Bosch", "Check and wipe door gasket", 40],
+    ["Bosch", "Inspect spray arms", 60],
+    // fridge: water filter 12 days overdue (180d interval), coils due in ~3 weeks
+    ["Samsung", "Replace water filter", 192],
+    ["Samsung", "Clean condenser coils", 160],
+    ["Samsung", "Wipe door seals", 20],
+    ["Samsung", "Replace air filter", 100],
+    // coffee maker: descale due in ~3 weeks (90d)
+    ["Keurig", "Descale", 70],
+    ["Keurig", "Replace water filter", 30],
+    // washer: all recent
+    ["LG", "Run tub clean cycle", 10],
+    ["LG", "Clean drain pump filter", 45],
+    ["LG", "Wipe door gasket", 5],
+    ["LG", "Inspect hoses", 100],
+    // furnace: air filter 5 days overdue (90d), tune-up done last season
+    ["Carrier", "Replace air filter", 95],
+    ["Carrier", "Professional tune-up", 200],
+    ["Carrier", "Clear outdoor condenser", 100]
+  ];
+  for (const [brand, task, days] of done) {
+    const a = by(brand);
+    if (a) await service.logMaintenance(householdId, a, task, undefined, ago(days));
+  }
 
   return seeds.length;
 }
