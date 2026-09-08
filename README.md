@@ -108,7 +108,7 @@ Useful environment variables (all optional):
 | `MCP_URL` | simulator | MCP endpoint (local or AgentCore invocation URL) |
 | `MCP_AUTH` | simulator | `none`, `sigv4` (auto for AgentCore URLs) or `bearer` |
 | `HOST_MODE=rules` | simulator | Skip Bedrock and use the intent router |
-| `POLLY_VOICE`, `POLLY_ENGINE` | simulator | Spoken replies: Polly voice (default `Ruth`) and engine (default `generative`) |
+| `POLLY_VOICE`, `POLLY_ENGINE` | simulator | Spoken replies: Polly voice (default `Ruth`; `Matthew` is the pick for a male voice) and engine (default `generative`). Also switchable live from the UI |
 | `SONIC_MODEL_ID`, `SONIC_VOICE`, `SONIC_SPEAKER` | simulator | Live voice: Nova 2 Sonic model, its voice, and who the user hears (`polly` default, or `sonic`) |
 
 Inspect the server with the MCP Inspector:
