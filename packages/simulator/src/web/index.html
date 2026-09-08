@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HomeKeeper on Alexa+ (simulated)</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Alexa+ <em>simulated host</em></span>
+      </div>
+      <div class="status" id="status">connecting…</div>
+    </header>
+
+    <main class="stage">
+      <section class="transcript" id="transcript">
+        <div class="hint">
+          <h1>HomeKeeper</h1>
+          <p>Your home's memory, on Alexa+. Try one of these, or tap the mic.</p>
+          <div class="chips" id="suggestions">
+            <button data-say="What appliances do I have?">What appliances do I have?</button>
+            <button data-say="The dishwasher is showing E24">The dishwasher is showing E24</button>
+            <button data-say="What needs attention this month?">What needs attention this month?</button>
+            <button data-say="My coffee maker only brews half a cup">My coffee maker only brews half a cup</button>
+            <button data-say="Order a new water filter for the fridge">Order a new water filter for the fridge</button>
+            <button data-say="Is the washer still under warranty?">Is the washer still under warranty?</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="composer">
+      <div class="orb" id="orb" title="Alexa is listening"></div>
+      <form id="form">
+        <input id="input" type="text" placeholder="Say something to Alexa…" autocomplete="off" />
+        <button type="button" id="mic" title="Speak">🎤</button>
+        <button type="submit" title="Send">↵</button>
+      </form>
+      <label class="voice"><input type="checkbox" id="tts" checked /> read replies aloud</label>
+    </footer>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

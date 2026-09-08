@@ -1,0 +1,27 @@
+{
+  "name": "@homekeeper/simulator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simulated Alexa+ host: Bedrock-backed reasoning, MCP client, MCP Apps rendering, voice in/out",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,yellow \"tsx watch src/server/index.ts\" \"vite --config vite.config.ts\"",
+    "build": "vite build --config vite.config.ts",
+    "start": "tsx src/server/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.900.0",
+    "@aws-sdk/credential-providers": "^3.900.0",
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@smithy/protocol-http": "^5.1.0",
+    "@smithy/signature-v4": "^5.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}
