@@ -86,7 +86,7 @@ async function loadVoices() {
       picks.appendChild(o);
     }
     if (picks.children.length) voicePick.appendChild(picks);
-    const label: Record<string, string> = { generative: "all generative", "long-form": "long-form · most expressive", neural: "neural" };
+    const label: Record<string, string> = { generative: "all generative", "long-form": "long-form", neural: "neural (older engine)" };
     for (const engine of ["generative", "long-form", "neural"]) {
       const group = document.createElement("optgroup");
       group.label = label[engine] ?? engine;
@@ -99,18 +99,28 @@ async function loadVoices() {
       if (group.children.length) voicePick.appendChild(group);
     }
     voicePick.value = `${v.current.engine}:${v.current.voice}`;
+    chosenVoice = voicePick.value;
   } catch {
     voicePick.hidden = true;
   }
 }
 
+let chosenVoice = "";
+voicePick.addEventListener("focus", () => {
+  chosenVoice = voicePick.value;
+});
 voicePick.addEventListener("change", async () => {
   const [engine, voice] = voicePick.value.split(":");
   const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ voice, engine }) });
   if (!res.ok) {
-    addAlexa(`Couldn't switch voice: ${((await res.json()) as { error: string }).error}`);
+    // The server already put the previous voice back; mirror that in the picker and say what went wrong.
+    if (chosenVoice) voicePick.value = chosenVoice;
+    status.textContent = ((await res.json()) as { error: string }).error;
+    status.classList.add("err");
     return;
   }
+  chosenVoice = voicePick.value;
+  status.classList.remove("err");
   void loadStatus();
   void speak(SAMPLE.default.replace("{name}", voice));
 });
@@ -191,29 +201,34 @@ function addElicit(id: string, message: string) {
 
 // ------------------------------------------------------------------ voice
 let player: HTMLAudioElement | undefined;
-let pollyOk = true;
 
-/** Speak with Amazon Polly (generative voice) via the API; fall back to the browser voice. */
+/**
+ * Speak with Amazon Polly via the API. If Polly cannot speak this reply, say
+ * why in the status line and use the browser voice for this reply only; the
+ * next reply tries Polly again.
+ */
 async function speak(text: string) {
   if (!tts.checked) return;
   stopSpeaking();
-  if (pollyOk) {
-    try {
-      const res = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
-      if (!res.ok) throw new Error(`tts ${res.status}`);
-      const url = URL.createObjectURL(await res.blob());
-      player = new Audio(url);
-      player.onplay = () => orb.classList.add("speaking");
-      player.onended = player.onpause = () => {
-        orb.classList.remove("speaking");
-        URL.revokeObjectURL(url);
-      };
-      await player.play();
-      return;
-    } catch (err) {
-      console.warn("Polly unavailable, using browser voice:", err);
-      pollyOk = false;
+  try {
+    const res = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+    if (!res.ok) {
+      const why = ((await res.json().catch(() => ({}))) as { error?: string }).error ?? `HTTP ${res.status}`;
+      throw new Error(why);
     }
+    const url = URL.createObjectURL(await res.blob());
+    player = new Audio(url);
+    player.onplay = () => orb.classList.add("speaking");
+    player.onended = player.onpause = () => {
+      orb.classList.remove("speaking");
+      URL.revokeObjectURL(url);
+    };
+    await player.play();
+    return;
+  } catch (err) {
+    console.warn("Polly could not speak this reply:", err);
+    status.textContent = `Polly could not speak this reply (${(err as Error).message}). Using the browser voice.`;
+    status.classList.add("err");
   }
   if (!("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(text);

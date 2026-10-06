@@ -47,9 +47,17 @@ export async function listVoices(): Promise<VoiceOption[]> {
 export async function setVoice(voice: string, engine: TtsEngine): Promise<void> {
   const ok = (await listVoices()).some((v) => v.id === voice && v.engine === engine);
   if (!ok) throw new Error(`${voice} is not available on the ${engine} engine`);
+  const previous = { ...current };
   current.voice = voice as VoiceId;
   current.engine = engine;
   cache.clear();
+  // Prove the combination works before accepting it, so the picker never lands on a voice that cannot speak.
+  try {
+    await synthesize(`Hi, I'm ${voice}.`);
+  } catch (err) {
+    Object.assign(current, previous);
+    throw new Error(`Polly cannot speak with ${voice} on the ${engine} engine: ${(err as Error).message}`);
+  }
 }
 
 export const ttsInfo = {
@@ -73,16 +81,36 @@ export async function synthesize(text: string, format: "mp3" | "pcm" = "mp3"): P
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const res = await polly.send(
+  const request = (textType: "ssml" | "text") =>
     new SynthesizeSpeechCommand({
       Engine: current.engine as Engine,
       VoiceId: current.voice,
       OutputFormat: format,
       SampleRate: format === "pcm" ? String(PCM_RATE) : undefined,
-      TextType: "ssml",
-      Text: toSsml(text)
-    })
-  );
+      TextType: textType,
+      Text: textType === "ssml" ? toSsml(text) : text
+    });
+  let res;
+  let textType: "ssml" | "text" = "ssml";
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await polly.send(request(textType));
+      break;
+    } catch (err) {
+      const name = (err as Error).name;
+      // The generative engine has a small concurrency quota; wait and try again rather than dropping to the browser voice.
+      if (/Throttling|TooManyRequests|ServiceUnavailable/.test(name) && attempt < 3) {
+        await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
+        continue;
+      }
+      // An engine that rejects a tag gets the plain sentence instead.
+      if (name === "InvalidSsmlException" && textType === "ssml") {
+        textType = "text";
+        continue;
+      }
+      throw err;
+    }
+  }
   const bytes = await res.AudioStream!.transformToByteArray();
   if (cache.size > 200) cache.delete(cache.keys().next().value!);
   cache.set(key, bytes);
