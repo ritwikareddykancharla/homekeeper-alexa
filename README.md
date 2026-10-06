@@ -135,11 +135,15 @@ The MCP endpoint is not a web page: it expects signed MCP requests. To talk to i
 MCP_URL="https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A796330847946%3Aruntime%2Fhomekeeper_mcp-4u76IK77S2/invocations?qualifier=DEFAULT" npm run dev -w @homekeeper/simulator
 ```
 
-The public host is the `HomeKeeperDemo` stack in `infra/`: one Arm EC2 instance in the default VPC that clones this repository, builds the simulator, and runs it under systemd on port 80, behind a CloudFront distribution for HTTPS (the microphone needs a secure context) and the voice WebSocket. Its instance role can call Bedrock, Polly, and the HomeKeeper runtime. To ship a new commit to it:
+The public host is the `HomeKeeperDemo` stack in `infra/`: one Arm EC2 instance in the default VPC that clones this repository, builds the simulator, and runs it under systemd on port 80, behind a CloudFront distribution for HTTPS (the microphone needs a secure context) and the voice WebSocket. Its instance role can call Bedrock, Polly, and the HomeKeeper runtime.
+
+**Every push to `main` redeploys it.** The [deploy-demo workflow](.github/workflows/deploy-demo.yml) assumes an AWS role through GitHub's OIDC provider (both created by the same stack, so no AWS keys are stored in GitHub), runs `/opt/homekeeper/redeploy.sh` on the instance over SSM, and checks the public URL. The account id, instance id and role ARN in that file are identifiers, not secrets: the role trusts only this repository's `main` branch and can only run that one command on that one instance. To do the same by hand:
 
 ```bash
 aws ssm send-command --instance-ids <InstanceId> --document-name AWS-RunShellScript --parameters 'commands=["/opt/homekeeper/redeploy.sh"]'
 ```
+
+The MCP server on AgentCore is deployed separately with `npm run deploy`.
 
 ## Deploying to AWS
 

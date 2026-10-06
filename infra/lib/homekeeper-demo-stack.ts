@@ -118,7 +118,34 @@ export class HomeKeeperDemoStack extends Stack {
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3
     });
 
+    // ------------------------------------------------ deploy on push (GitHub)
+    // GitHub Actions assumes this role through OIDC (no stored keys) and runs
+    // the host's redeploy script over SSM whenever main changes.
+    const github = new iam.OpenIdConnectProvider(this, "GitHubOidc", {
+      url: "https://token.actions.githubusercontent.com",
+      clientIds: ["sts.amazonaws.com"]
+    });
+    const repo = props.repoUrl.replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "");
+    const deployRole = new iam.Role(this, "GitHubDeployRole", {
+      roleName: "homekeeper-github-deploy",
+      description: `Lets GitHub Actions for ${repo} (main) redeploy the demo host`,
+      assumedBy: new iam.WebIdentityPrincipal(github.openIdConnectProviderArn, {
+        StringEquals: { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
+        StringLike: { "token.actions.githubusercontent.com:sub": `repo:${repo}:ref:refs/heads/${ref}` }
+      }),
+      maxSessionDuration: Duration.hours(1)
+    });
+    deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "RunRedeployOnHost",
+        actions: ["ssm:SendCommand"],
+        resources: [`arn:aws:ssm:${this.region}::document/AWS-RunShellScript`, `arn:aws:ec2:${this.region}:${this.account}:instance/${instance.instanceId}`]
+      })
+    );
+    deployRole.addToPolicy(new iam.PolicyStatement({ sid: "ReadResult", actions: ["ssm:GetCommandInvocation", "ssm:ListCommandInvocations"], resources: ["*"] }));
+
     new CfnOutput(this, "DemoUrl", { value: `https://${dist.distributionDomainName}` });
+    new CfnOutput(this, "GitHubDeployRoleArn", { value: deployRole.roleArn });
     new CfnOutput(this, "InstanceId", { value: instance.instanceId });
     new CfnOutput(this, "ElasticIp", { value: eip.ref });
     new CfnOutput(this, "McpUrl", { value: mcpUrl });
