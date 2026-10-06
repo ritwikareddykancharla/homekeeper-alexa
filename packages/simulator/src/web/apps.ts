@@ -20,18 +20,19 @@ const debug = { bridges: [] as AppBridge[], initialized: [] as string[], errors:
 
 /** CSS custom properties passed to views so they match the host theme. */
 const HOST_STYLE_VARS: Record<string, string> = {
-  "--color-background-primary": "#f2f2ef",
-  "--color-background-secondary": "#ffffff",
-  "--color-background-tertiary": "#f2f2ef",
-  "--color-text-primary": "#151617",
-  "--color-text-secondary": "#6f7479",
-  "--color-text-info": "#1b9ad6",
-  "--color-text-warning": "#d98e04",
-  "--color-text-danger": "#c0392b",
-  "--color-text-success": "#2e8b57",
-  "--color-border-primary": "#d6d7d3",
-  "--font-sans": '"Charter", "Iowan Old Style", Georgia, serif',
-  "--border-radius-lg": "6px"
+  // The host wrapper supplies the frosted glass; the card itself stays transparent.
+  "--color-background-primary": "transparent",
+  "--color-background-secondary": "transparent",
+  "--color-background-tertiary": "rgba(255, 255, 255, 0.10)",
+  "--color-text-primary": "#f5f7fb",
+  "--color-text-secondary": "rgba(245, 247, 251, 0.62)",
+  "--color-text-info": "#38d6f5",
+  "--color-text-warning": "#ffb547",
+  "--color-text-danger": "#ff6b6b",
+  "--color-text-success": "#4ade80",
+  "--color-border-primary": "rgba(255, 255, 255, 0.16)",
+  "--font-sans": '-apple-system, "SF Pro Display", "Amazon Ember", "Segoe UI", Inter, Roboto, sans-serif',
+  "--border-radius-lg": "16px"
 };
 
 export async function mountApp(
@@ -49,7 +50,7 @@ export async function mountApp(
 
   const bridge = new AppBridge(null, HOST_INFO, { openLinks: {}, serverTools: {}, logging: {} });
   bridge.setHostContext({
-    theme: "light",
+    theme: "dark",
     displayMode: "inline",
     availableDisplayModes: ["inline"],
     platform: "web",

@@ -2,21 +2,21 @@ import { DescribeVoicesCommand, PollyClient, SynthesizeSpeechCommand, type Engin
 import { config } from "./config.js";
 
 /**
- * Text to speech with Amazon Polly. Default is Ruth on the generative engine,
- * the warmest and most expressive of the en-US voices in a side-by-side test.
- * Joanna is the voice the original US Alexa was built from if you want the
- * "classic Alexa" sound. The voice can be switched at runtime from the
+ * Text to speech with Amazon Polly. Default is Joanna on the neural engine,
+ * the voice the original US Alexa was built from, so the simulator sounds
+ * like the Alexa people know. Joanna on the generative engine and Ruth are
+ * warmer, newer alternatives. The voice can be switched at runtime from the
  * simulator UI (POST /api/voice).
  *
- *   POLLY_VOICE   Ruth | Joanna | Danielle | Salli | Matthew | Stephen | Tiffany | ...  (default Ruth)
- *   POLLY_ENGINE  generative | long-form | neural                                     (default generative)
+ *   POLLY_VOICE   Joanna | Ruth | Danielle | Salli | Matthew | Stephen | Tiffany | ...  (default Joanna)
+ *   POLLY_ENGINE  generative | long-form | neural                                     (default neural)
  */
 const polly = new PollyClient({ region: config.region });
 
 type TtsEngine = "generative" | "long-form" | "neural";
 const current = {
-  voice: (process.env.POLLY_VOICE ?? "Ruth") as VoiceId,
-  engine: (process.env.POLLY_ENGINE ?? "generative") as TtsEngine
+  voice: (process.env.POLLY_VOICE ?? "Joanna") as VoiceId,
+  engine: (process.env.POLLY_ENGINE ?? "neural") as TtsEngine
 };
 
 export interface VoiceOption {

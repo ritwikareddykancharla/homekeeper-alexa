@@ -7,19 +7,23 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <div class="ambient" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+
     <header class="top">
       <div class="brand">
         <span class="dot"></span>
         <span>Alexa+ <em>simulated host</em></span>
       </div>
+      <div class="clock" id="clock"></div>
       <div class="status" id="status">Connecting</div>
     </header>
 
     <main class="stage">
       <section class="transcript" id="transcript">
         <div class="hint">
-          <h1>HomeKeeper</h1>
-          <p>Your home's memory, on Alexa+. Ask about any appliance in the house, or press the microphone to talk.</p>
+          <p class="greet" id="greet">Good morning.</p>
+          <h1>HomeKeeper remembers your home.</h1>
+          <p>Every appliance, its manual, its maintenance and its warranty. Ask about any of them, or press Talk.</p>
           <div class="chips" id="suggestions">
             <button data-say="What appliances do I have?">What appliances do I have?</button>
             <button data-say="The dishwasher is showing E24">The dishwasher is showing E24</button>
@@ -35,7 +39,7 @@
     <footer class="composer">
       <div class="orb" id="orb" title="Alexa's light"></div>
       <form id="form">
-        <input id="input" type="text" placeholder="Say something to Alexa" autocomplete="off" />
+        <input id="input" type="text" placeholder="Ask Alexa about your home" autocomplete="off" />
         <button type="button" id="mic" title="Talk live with Nova 2 Sonic. Press again to hang up." aria-label="Talk">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
           Talk
@@ -44,7 +48,7 @@
       </form>
       <div class="voicerow">
         <label class="voice"><input type="checkbox" id="tts" checked /> Read replies aloud</label>
-        <select id="voicePick" class="voicepick" title="Polly voice"></select>
+        <select id="voicePick" class="voicepick" title="Alexa's voice"></select>
       </div>
     </footer>
 

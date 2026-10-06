@@ -22,13 +22,65 @@
 }
 
 html[data-theme="dark"] {
+  /* Must match the host document's color-scheme, or Chrome paints the iframe canvas opaque. */
   color-scheme: dark;
-  --hk-bg: var(--color-background-primary, #1c1d1e);
-  --hk-card: var(--color-background-secondary, #262729);
-  --hk-card-2: var(--color-background-tertiary, #303133);
-  --hk-text: var(--color-text-primary, #f2f2ef);
-  --hk-muted: var(--color-text-secondary, #a2a6aa);
-  --hk-border: var(--color-border-primary, #3b3d40);
+  --hk-bg: var(--color-background-primary, #0b1220);
+  --hk-card: var(--color-background-secondary, rgba(255, 255, 255, 0.06));
+  --hk-card-2: var(--color-background-tertiary, rgba(255, 255, 255, 0.1));
+  --hk-text: var(--color-text-primary, #f5f7fb);
+  --hk-muted: var(--color-text-secondary, rgba(245, 247, 251, 0.62));
+  --hk-border: var(--color-border-primary, rgba(255, 255, 255, 0.16));
+  --hk-radius: var(--border-radius-lg, 16px);
+  --hk-font-display: var(--font-sans, -apple-system, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif);
+}
+
+/* On a dark host the wrapper draws the glass, so the card is just padding and type. */
+html[data-theme="dark"] .card {
+  border: 0;
+  padding: 16px 18px 18px;
+}
+
+html[data-theme="dark"] h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+html[data-theme="dark"] button {
+  border-color: var(--hk-border);
+  background: var(--hk-card-2);
+  border-radius: 999px;
+  padding: 9px 16px;
+}
+
+html[data-theme="dark"] button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme="dark"] button.primary {
+  background: linear-gradient(90deg, #38d6f5, #2f7cf6 50%, #8b5cf6);
+  color: #04101c;
+  border-color: transparent;
+}
+
+html[data-theme="dark"] button.primary:hover {
+  background: linear-gradient(90deg, #5ee0f8, #4a8ff8 50%, #9d75f9);
+}
+
+html[data-theme="dark"] .eyebrow .dot {
+  background: linear-gradient(90deg, #38d6f5, #8b5cf6);
+}
+
+html[data-theme="dark"] .source {
+  border-left-color: #38d6f5;
+}
+
+html[data-theme="dark"] .product .thumb {
+  background: var(--hk-card-2);
+  border-color: transparent;
+}
+
+html[data-theme="dark"] .steps li::before {
+  color: #38d6f5;
 }
 
 * {

@@ -73,16 +73,21 @@ async function loadVoices() {
       voices: Array<{ id: string; name: string; gender: string; engine: string }>;
     };
     voicePick.replaceChildren();
-    // Shortlist from a side-by-side listen: warmest and most natural of the generative voices.
-    const PICKS = ["Ruth", "Matthew", "Stephen"];
+    // Joanna on the neural engine is the classic Alexa sound; the rest are the warmest newer voices.
+    const PICKS: Array<[string, string, string]> = [
+      ["neural", "Joanna", "Joanna, classic Alexa"],
+      ["generative", "Joanna", "Joanna, generative"],
+      ["generative", "Ruth", "Ruth"],
+      ["generative", "Matthew", "Matthew"]
+    ];
     const picks = document.createElement("optgroup");
     picks.label = "picks";
-    for (const id of PICKS) {
-      const vo = v.voices.find((x) => x.engine === "generative" && x.id === id);
+    for (const [engine, id, label] of PICKS) {
+      const vo = v.voices.find((x) => x.engine === engine && x.id === id);
       if (!vo) continue;
       const o = document.createElement("option");
-      o.value = `generative:${vo.id}`;
-      o.textContent = `${vo.name} (${vo.gender[0] ?? ""})`;
+      o.value = `${engine}:${vo.id}`;
+      o.textContent = label;
       picks.appendChild(o);
     }
     if (picks.children.length) voicePick.appendChild(picks);
@@ -415,6 +420,22 @@ $<HTMLElement>("#suggestions").addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest("button[data-say]") as HTMLButtonElement | null;
   if (b) void send(b.dataset.say!);
 });
+
+// ------------------------------------------------------------ kitchen clock
+function tickClock() {
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const date = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+  const clock = document.querySelector("#clock");
+  if (clock) clock.innerHTML = `<b>${time}</b>${date}`;
+  const greet = document.querySelector("#greet");
+  if (greet) {
+    const h = now.getHours();
+    greet.textContent = h < 5 ? "Still up?" : h < 12 ? "Good morning." : h < 17 ? "Good afternoon." : "Good evening.";
+  }
+}
+tickClock();
+setInterval(tickClock, 15_000);
 
 void loadStatus();
 void loadVoices();

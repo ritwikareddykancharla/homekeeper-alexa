@@ -7,7 +7,7 @@
  * hand the result back, and Sonic speaks the answer while the card renders.
  *
  * Sonic's own voices are its weak point, so by default its audio is discarded
- * and each sentence it decides to say is spoken by Polly (generative Ruth by
+ * and each sentence it decides to say is spoken by Polly (Joanna by
  * default) as soon as the text arrives.
  *
  *   SONIC_MODEL_ID  default amazon.nova-2-sonic-v1:0
