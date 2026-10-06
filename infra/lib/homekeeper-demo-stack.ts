@@ -131,7 +131,11 @@ export class HomeKeeperDemoStack extends Stack {
       description: `Lets GitHub Actions for ${repo} (main) redeploy the demo host`,
       assumedBy: new iam.WebIdentityPrincipal(github.openIdConnectProviderArn, {
         StringEquals: { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
-        StringLike: { "token.actions.githubusercontent.com:sub": `repo:${repo}:ref:refs/heads/${ref}` }
+        // GitHub now tags owner and repo with their numeric ids in the subject
+        // ("repo:owner@123/name@456:ref:..."); accept both forms for this branch only.
+        StringLike: {
+          "token.actions.githubusercontent.com:sub": [`repo:${repo}:ref:refs/heads/${ref}`, `repo:${repo.replace("/", "@*/")}@*:ref:refs/heads/${ref}`]
+        }
       }),
       maxSessionDuration: Duration.hours(1)
     });
