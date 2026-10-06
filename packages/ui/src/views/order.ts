@@ -1,4 +1,4 @@
-import { mount, el, ICONS, say, callTool } from "../shared";
+import { mount, el, say, callTool } from "../shared";
 
 interface Product {
   id: string;
@@ -56,10 +56,10 @@ void mount<Data>((data) => {
   card.append(head);
 
   const p = el("div", { class: "product" });
-  p.append(el("div", { class: "thumb" }, ICONS[data.appliance.category] ?? "📦"));
+  p.append(el("div", { class: "thumb" }, "Part", el("b", {}, consumable.partHint ?? consumable.name)));
   const info = el("div", {});
   info.append(el("div", { class: "title" }, product.title));
-  info.append(el("div", { class: "muted" }, `${consumable.partHint ? `Part ${consumable.partHint} · ` : ""}${product.deliveryEstimate}`));
+  info.append(el("div", { class: "muted" }, `Arrives ${product.deliveryEstimate.replace(/^Tomorrow/, "tomorrow")}`));
   const qty = data.quantity ?? 1;
   info.append(el("div", { class: "price" }, `$${(data.total ?? product.price * qty).toFixed(2)}${qty > 1 ? ` (${qty} × $${product.price.toFixed(2)})` : ""}`));
   p.append(info);

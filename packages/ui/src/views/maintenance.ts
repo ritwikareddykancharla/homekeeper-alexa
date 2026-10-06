@@ -1,4 +1,4 @@
-import { mount, el, ICONS, say, relDays, callTool } from "../shared";
+import { mount, el, say, relDays, callTool } from "../shared";
 
 interface Item {
   taskId: string;
@@ -37,8 +37,8 @@ void mount<Data>((data) => {
     const row = el("div", { class: `tl-item ${it.status}` });
     row.append(el("div", { class: "bar" }));
     const body = el("div", {});
-    body.append(el("div", { class: "title" }, `${ICONS[it.appliance.category] ?? ""} ${it.title}`));
-    body.append(el("div", { class: "sub" }, `${it.appliance.name}${it.instructions ? ` · ${it.instructions.split(/(?<=\.)\s/)[0]}` : ""}`));
+    body.append(el("div", { class: "title" }, it.title));
+    body.append(el("div", { class: "sub" }, `${it.appliance.name.replace(/\b\w/, (c) => c.toUpperCase())}${it.instructions ? `. ${it.instructions.split(/(?<=\.)\s/)[0]}` : ""}`));
     const btns = el("div", { class: "actions", style: "margin-top:8px" });
     const done = el("button", {}, "Done");
     done.addEventListener("click", async () => {

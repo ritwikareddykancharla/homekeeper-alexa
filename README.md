@@ -188,9 +188,10 @@ Active development for the hackathon (deadline Oct 23, 2026).
 - [x] Live voice: Nova 2 Sonic bidirectional stream driving MCP tools, Polly generative voice out, barge-in
 - [x] AWS CDK: DynamoDB, S3, IAM, Bedrock AgentCore Runtime (Node.js 22 direct code deploy), optional Cognito
 - [x] Local end-to-end: utterance to tool call to grounded answer to rendered card, including elicitation round-trip
-- [ ] Deploy to AWS and test against the hosted server (waiting on account credentials)
+- [x] Deploy to AWS (Bedrock AgentCore Runtime v3, us-east-1) and test against the hosted server through the simulator with SigV4
 - [ ] Alexa+ MCP Toolkit registration (`alexa-ai new mcp` / `alexa-ai deploy`) once Private Preview access is granted
-- [ ] Demo video; finalize [friction log](docs/friction-log.md) and [product feedback](docs/product-feedback.md)
+- [x] Demo video (`demo/`, 2:58, narration script in `demo/narration.json`)
+- [ ] Finalize [friction log](docs/friction-log.md) and [product feedback](docs/product-feedback.md)
 
 ## License
 

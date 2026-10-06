@@ -8,7 +8,7 @@
   "scripts": {
     "synth": "cdk synth --strict",
     "diff": "cdk diff",
-    "deploy": "cdk deploy --require-approval never",
+    "deploy": "cdk deploy --all --require-approval never",
     "destroy": "cdk destroy",
     "bootstrap": "cdk bootstrap",
     "typecheck": "tsc -p tsconfig.json --noEmit"

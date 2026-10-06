@@ -20,13 +20,18 @@ const debug = { bridges: [] as AppBridge[], initialized: [] as string[], errors:
 
 /** CSS custom properties passed to views so they match the host theme. */
 const HOST_STYLE_VARS: Record<string, string> = {
-  "--color-background-primary": "#16223a",
-  "--color-background-secondary": "#1c2a45",
-  "--color-text-primary": "#f1f5f9",
-  "--color-text-secondary": "#94a3b8",
-  "--color-border-primary": "#23324f",
-  "--font-sans": '"Amazon Ember", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  "--border-radius-lg": "18px"
+  "--color-background-primary": "#f2f2ef",
+  "--color-background-secondary": "#ffffff",
+  "--color-background-tertiary": "#f2f2ef",
+  "--color-text-primary": "#151617",
+  "--color-text-secondary": "#6f7479",
+  "--color-text-info": "#1b9ad6",
+  "--color-text-warning": "#d98e04",
+  "--color-text-danger": "#c0392b",
+  "--color-text-success": "#2e8b57",
+  "--color-border-primary": "#d6d7d3",
+  "--font-sans": '"Charter", "Iowan Old Style", Georgia, serif',
+  "--border-radius-lg": "6px"
 };
 
 export async function mountApp(
@@ -44,7 +49,7 @@ export async function mountApp(
 
   const bridge = new AppBridge(null, HOST_INFO, { openLinks: {}, serverTools: {}, logging: {} });
   bridge.setHostContext({
-    theme: "dark",
+    theme: "light",
     displayMode: "inline",
     availableDisplayModes: ["inline"],
     platform: "web",

@@ -1,0 +1,70 @@
+[
+ {
+  "id": "s1_title",
+  "kind": "slide",
+  "slide": "title",
+  "text": "Every home has twenty to forty appliances. And every one of them comes with a manual nobody keeps, a warranty nobody tracks, and a filter nobody remembers to change. This is HomeKeeper. Your home's memory, on Alexa Plus."
+ },
+ {
+  "id": "s2_what",
+  "kind": "slide",
+  "slide": "what",
+  "text": "HomeKeeper is a self-hosted MCP server, built on the open standard that powers Alexa Plus add-ons. It remembers your appliances, reads their manuals, plans their maintenance, and reorders the parts you forget. Let's see it work."
+ },
+ {
+  "id": "s3_sim",
+  "kind": "slide",
+  "slide": "sim",
+  "text": "Because the Alexa Plus toolkit is still in private preview, you are watching a simulated Alexa Plus host. Same Bedrock reasoning, same MCP client, same cards. Nothing here is mocked."
+ },
+ {
+  "id": "d1_list",
+  "kind": "demo",
+  "say": "What appliances do I have?",
+  "text": "First, the inventory. Alexa calls list appliances over MCP, and HomeKeeper answers with the household, plus a card rendered through MCP Apps. Five appliances, with models, rooms, and what is due."
+ },
+ {
+  "id": "d2_e24",
+  "kind": "demo",
+  "say": "The dishwasher is showing E24",
+  "text": "Now the real test. The dishwasher is showing E24. HomeKeeper works out which dishwasher, opens the Bosch manual, and retrieves the right section with hybrid search: embeddings plus keywords, so an exact error code always hits. Claude writes the answer from that excerpt only, and the card shows the source. Drain hose, filter, disposal plug. No guessing."
+ },
+ {
+  "id": "d3_due",
+  "kind": "demo",
+  "say": "What needs attention this month?",
+  "text": "What needs attention this month? HomeKeeper derived every one of these schedules itself, the moment each appliance was registered. Overdue, due this week, and coming up, on a single timeline."
+ },
+ {
+  "id": "d4_warranty",
+  "kind": "demo",
+  "say": "Is the washer still under warranty?",
+  "card": false,
+  "text": "Is the washer still under warranty? Three hundred and four days left, and exactly what you will need for a claim."
+ },
+ {
+  "id": "d5_order",
+  "kind": "demo",
+  "say": "Order a new water filter for the fridge",
+  "confirm": true,
+  "text": "And when something is due, acting is one turn. Order a new water filter for the fridge. HomeKeeper matches the filter to the model, quotes it, and asks for confirmation through MCP elicitation. Yes. Ordered, with a receipt card."
+ },
+ {
+  "id": "s4_voice",
+  "kind": "slide",
+  "slide": "voice",
+  "text": "Tap the mic, and the very same server runs on a live voice session with Amazon Nova 2 Sonic. Speech in, reasoning, MCP tool calls, and barge-in, all in one bidirectional stream, spoken back with Polly's generative Ruth voice."
+ },
+ {
+  "id": "s5_arch",
+  "kind": "slide",
+  "slide": "arch",
+  "text": "Under the hood, the MCP server runs on Amazon Bedrock AgentCore Runtime, deployed with CDK as a plain Node zip. Household state lives in DynamoDB. Manual chunks and their embeddings live in S3. Claude Sonnet 4.5 reasons, Titan embeds, Nova 2 Sonic listens, and Polly speaks. Ten tools, four cards, one prompt, and elicitation, all on MCP spec 2025-11-25 over Streamable HTTP."
+ },
+ {
+  "id": "s6_close",
+  "kind": "slide",
+  "slide": "close",
+  "text": "When preview access lands, registering HomeKeeper with Alexa Plus is a single CLI command. Until then, it is open source, MIT licensed, on GitHub. HomeKeeper. Your home's memory, on Alexa Plus."
+ }
+]

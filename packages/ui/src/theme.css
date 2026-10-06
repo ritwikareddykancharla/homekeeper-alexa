@@ -1,26 +1,34 @@
+/*
+ * HomeKeeper card theme.
+ * Drawn from the objects HomeKeeper manages: the enamel of an appliance, the
+ * stamped rating plate, the numbered steps of an owner's manual. Hosts that
+ * pass MCP Apps style variables override the palette and fonts.
+ */
 :root {
-  color-scheme: light dark;
-  --hk-bg: var(--color-background-primary, #0f1720);
-  --hk-card: var(--color-background-secondary, #182230);
-  --hk-card-2: var(--color-background-tertiary, #1f2b3a);
-  --hk-text: var(--color-text-primary, #f3f6fa);
-  --hk-muted: var(--color-text-secondary, #9fb0c3);
-  --hk-accent: var(--color-text-info, #31c4f3);
-  --hk-warn: var(--color-text-warning, #f5b544);
-  --hk-danger: var(--color-text-danger, #ff6b6b);
-  --hk-ok: var(--color-text-success, #4fd18b);
-  --hk-border: var(--color-border-primary, rgba(255, 255, 255, 0.08));
-  --hk-radius: var(--border-radius-lg, 18px);
-  --hk-font: var(--font-sans, "Amazon Ember", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  color-scheme: light;
+  --hk-bg: var(--color-background-primary, #f2f2ef);
+  --hk-card: var(--color-background-secondary, #ffffff);
+  --hk-card-2: var(--color-background-tertiary, #f2f2ef);
+  --hk-text: var(--color-text-primary, #151617);
+  --hk-muted: var(--color-text-secondary, #6f7479);
+  --hk-accent: var(--color-text-info, #1b9ad6);
+  --hk-warn: var(--color-text-warning, #d98e04);
+  --hk-danger: var(--color-text-danger, #c0392b);
+  --hk-ok: var(--color-text-success, #2e8b57);
+  --hk-border: var(--color-border-primary, #d6d7d3);
+  --hk-radius: var(--border-radius-lg, 6px);
+  --hk-font: var(--font-sans, "Charter", "Iowan Old Style", Georgia, serif);
+  --hk-font-display: var(--font-display, "Futura", "Avenir Next", "Helvetica Neue", sans-serif);
 }
 
-html[data-theme="light"] {
-  --hk-bg: var(--color-background-primary, #f6f8fb);
-  --hk-card: var(--color-background-secondary, #ffffff);
-  --hk-card-2: var(--color-background-tertiary, #eef2f7);
-  --hk-text: var(--color-text-primary, #101720);
-  --hk-muted: var(--color-text-secondary, #5a6b7f);
-  --hk-border: var(--color-border-primary, rgba(0, 0, 0, 0.08));
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --hk-bg: var(--color-background-primary, #1c1d1e);
+  --hk-card: var(--color-background-secondary, #262729);
+  --hk-card-2: var(--color-background-tertiary, #303133);
+  --hk-text: var(--color-text-primary, #f2f2ef);
+  --hk-muted: var(--color-text-secondary, #a2a6aa);
+  --hk-border: var(--color-border-primary, #3b3d40);
 }
 
 * {
@@ -34,21 +42,20 @@ body {
   background: transparent;
   color: var(--hk-text);
   font-family: var(--hk-font);
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 #app {
-  padding: 8px;
+  padding: 4px 0;
 }
 
 .card {
   background: var(--hk-card);
   border: 1px solid var(--hk-border);
   border-radius: var(--hk-radius);
-  padding: 16px 18px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  padding: 18px 22px 20px;
 }
 
 .card.error {
@@ -59,38 +66,44 @@ body {
   color: var(--hk-muted);
 }
 
+/* The small line above a card's heading: which appliance or which manual this is about. */
 .eyebrow {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--hk-font-display);
+  font-size: 13px;
+  font-weight: 500;
   color: var(--hk-muted);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .eyebrow .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--hk-accent);
+  background: var(--hk-text);
 }
 
 h1 {
-  font-size: 20px;
-  margin: 0 0 4px;
-  font-weight: 650;
+  font-family: var(--hk-font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 h2 {
+  font-family: var(--hk-font-display);
   font-size: 15px;
   margin: 12px 0 6px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 p {
   margin: 0 0 8px;
+  max-width: 68ch;
 }
 
 .muted {
@@ -107,47 +120,73 @@ p {
   flex: 1;
 }
 
+/* Status indicators read like the LEDs on an appliance: a small light plus a word. */
 .pill {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--hk-card-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--hk-font-display);
+  font-size: 13px;
+  font-weight: 500;
   color: var(--hk-muted);
 }
 
-.pill.ok {
-  color: var(--hk-ok);
+.pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hk-border);
 }
 
-.pill.warn {
-  color: var(--hk-warn);
+.pill.ok::before {
+  background: var(--hk-ok);
 }
 
+.pill.warn::before,
+.pill.accent::before {
+  background: var(--hk-warn);
+}
+
+.pill.danger::before {
+  background: var(--hk-danger);
+}
+
+.pill.ok,
+.pill.warn,
+.pill.accent,
 .pill.danger {
-  color: var(--hk-danger);
-}
-
-.pill.accent {
-  color: var(--hk-accent);
+  color: var(--hk-text);
 }
 
 button {
-  font: inherit;
-  border: 1px solid var(--hk-border);
-  background: var(--hk-card-2);
+  font-family: var(--hk-font-display);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--hk-text);
+  background: var(--hk-card);
   color: var(--hk-text);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 8px 14px;
   cursor: pointer;
-  font-weight: 600;
+}
+
+button:hover {
+  background: var(--hk-card-2);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--hk-accent);
+  outline-offset: 2px;
 }
 
 button.primary {
-  background: var(--hk-accent);
-  border-color: transparent;
-  color: #06202b;
+  background: var(--hk-text);
+  color: var(--hk-card);
+}
+
+button.primary:hover {
+  background: #2b2d2f;
 }
 
 button:disabled {
@@ -157,128 +196,138 @@ button:disabled {
 
 .actions {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.badge-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+/* ---------------------------------------------------------------- appliances */
+.carousel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--hk-border);
+  border-left: 1px solid var(--hk-border);
   margin-top: 12px;
 }
 
-/* Carousel */
-.carousel {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 4px 2px 10px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-}
-
 .tile {
-  flex: 0 0 210px;
-  scroll-snap-align: start;
-  background: var(--hk-card-2);
-  border: 1px solid var(--hk-border);
-  border-radius: 14px;
-  padding: 14px;
-  min-height: 150px;
+  border-right: 1px solid var(--hk-border);
+  border-bottom: 1px solid var(--hk-border);
+  padding: 14px 16px 12px;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  min-height: 118px;
 }
 
-.tile .icon {
-  font-size: 28px;
-  line-height: 1;
+.tile:hover,
+.tile:focus-visible {
+  background: var(--hk-card-2);
+  outline: none;
+}
+
+.tile .kind {
+  font-family: var(--hk-font-display);
+  font-size: 12px;
+  color: var(--hk-muted);
 }
 
 .tile .name {
-  font-weight: 650;
-  font-size: 15px;
+  font-family: var(--hk-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
 }
 
 .tile .model {
+  font-size: 14px;
   color: var(--hk-muted);
-  font-size: 12px;
 }
 
 .tile .foot {
-  margin-top: auto;
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: auto;
+  padding-top: 10px;
 }
 
-/* Steps */
-ol.steps {
-  margin: 6px 0 0;
-  padding-left: 0;
+/* -------------------------------------------------------------- troubleshoot */
+.steps {
   list-style: none;
   counter-reset: step;
-}
-
-ol.steps li {
-  counter-increment: step;
-  display: flex;
-  gap: 10px;
-  padding: 7px 0;
+  margin: 12px 0 4px;
+  padding: 0;
   border-top: 1px solid var(--hk-border);
 }
 
-ol.steps li::before {
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hk-border);
+}
+
+.steps li::before {
   content: counter(step);
-  flex: 0 0 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--hk-accent);
-  color: #06202b;
+  font-family: var(--hk-font-display);
   font-weight: 700;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .source {
-  background: var(--hk-card-2);
-  border-left: 3px solid var(--hk-accent);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
+  margin-top: 14px;
+  padding: 6px 0 6px 16px;
+  border-left: 2px solid var(--hk-text);
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--hk-muted);
-  white-space: pre-wrap;
-  max-height: 140px;
-  overflow: auto;
+  white-space: pre-line;
 }
 
 .source .label {
+  font-family: var(--hk-font-display);
+  font-size: 13px;
+  font-weight: 500;
   color: var(--hk-text);
-  font-weight: 600;
   margin-bottom: 4px;
-  font-size: 12px;
 }
 
-/* Timeline */
+/* --------------------------------------------------------------- maintenance */
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  border-top: 1px solid var(--hk-border);
+  margin-top: 6px;
 }
 
 .tl-item {
   display: grid;
-  grid-template-columns: 6px 1fr auto;
+  grid-template-columns: 14px 1fr auto;
   gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hk-border);
   align-items: start;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--hk-card-2);
-  border: 1px solid var(--hk-border);
 }
 
 .tl-item .bar {
-  width: 6px;
-  border-radius: 3px;
-  align-self: stretch;
-  background: var(--hk-muted);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 7px;
+  background: var(--hk-border);
 }
 
 .tl-item.overdue .bar {
@@ -289,89 +338,95 @@ ol.steps li::before {
   background: var(--hk-warn);
 }
 
-.tl-item.upcoming .bar {
-  background: var(--hk-ok);
-}
-
 .tl-item .title {
-  font-weight: 600;
+  font-family: var(--hk-font-display);
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .tl-item .sub {
   color: var(--hk-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tl-item .when {
+  font-family: var(--hk-font-display);
   font-size: 13px;
-  white-space: nowrap;
+  font-weight: 500;
   color: var(--hk-muted);
+  white-space: nowrap;
+  padding-top: 3px;
 }
 
 .tl-item.overdue .when {
   color: var(--hk-danger);
-  font-weight: 600;
 }
 
 .tl-item.due_soon .when {
   color: var(--hk-warn);
-  font-weight: 600;
 }
 
-/* Order */
+/* --------------------------------------------------------------------- order */
 .product {
   display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: 14px;
-  align-items: center;
-  background: var(--hk-card-2);
-  border-radius: 14px;
-  padding: 14px;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hk-border);
+  border-bottom: 1px solid var(--hk-border);
+  margin-top: 10px;
 }
 
 .product .thumb {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--hk-accent), #7b61ff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
+  font-family: var(--hk-font-display);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hk-muted);
+  border: 1px solid var(--hk-border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  text-align: center;
+  min-width: 96px;
+  align-self: start;
+  line-height: 1.3;
 }
 
-.product .title {
-  font-weight: 600;
-}
-
-.product .price {
-  font-size: 22px;
-  font-weight: 700;
+.product .thumb b {
+  display: block;
+  font-size: 14px;
+  color: var(--hk-text);
   margin-top: 2px;
 }
 
-.badge-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  flex-wrap: wrap;
+.product .title {
+  font-family: var(--hk-font-display);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.product .price {
+  font-family: var(--hk-font-display);
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 6px;
 }
 
 .check {
-  display: inline-flex;
-  width: 44px;
-  height: 44px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--hk-ok);
-  color: #06202b;
+  color: #fff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  font-weight: 800;
+  font-family: var(--hk-font-display);
+  font-weight: 700;
+  font-size: 15px;
 }
 
-@media (max-width: 420px) {
-  .tile {
-    flex-basis: 170px;
+@media (prefers-reduced-motion: no-preference) {
+  button {
+    transition: background-color 0.12s ease;
   }
 }

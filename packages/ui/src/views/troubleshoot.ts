@@ -1,4 +1,4 @@
-import { mount, el, ICONS, say } from "../shared";
+import { mount, el, say } from "../shared";
 
 interface Data {
   appliance: { id: string; name: string; brand: string; model: string; category: string };
@@ -22,7 +22,7 @@ void mount<Data>((data) => {
     card.append(el("div", { class: "eyebrow" }, el("span", { class: "dot" }), "Which one?"));
     const actions = el("div", { class: "actions" });
     for (const c of data.candidates) {
-      const b = el("button", {}, `${ICONS[(c as { category?: string }).category ?? "other"] ?? ""} ${c.name}`);
+      const b = el("button", {}, c.name);
       b.addEventListener("click", () => void say(`I mean the ${c.name}.`));
       actions.append(b);
     }
@@ -32,7 +32,7 @@ void mount<Data>((data) => {
   }
 
   card.append(el("div", { class: "eyebrow" }, el("span", { class: "dot" }), `${data.appliance.brand} ${data.appliance.model}`));
-  card.append(el("h1", {}, `${ICONS[data.appliance.category] ?? ""} ${data.question}`));
+  card.append(el("h1", {}, data.question));
   card.append(el("p", {}, data.answer));
 
   if (data.steps?.length) {
@@ -44,8 +44,14 @@ void mount<Data>((data) => {
   if (data.sources?.length) {
     const s = data.sources[0];
     const box = el("div", { class: "source" });
-    box.append(el("div", { class: "label" }, `From ${data.manual?.title ?? "the manual"}${s.section ? ` · ${s.section}` : ""}${s.page ? ` · p.${s.page}` : ""}`));
-    box.append(document.createTextNode(s.excerpt.replace(/\|/g, " · ").replace(/\n{2,}/g, "\n")));
+    box.append(el("div", { class: "label" }, `From ${data.manual?.title ?? "the manual"}${s.section ? `, ${s.section}` : ""}${s.page ? `, page ${s.page}` : ""}`));
+    const lines = s.excerpt
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !/^[\s|:-]+$/.test(l))
+      .map((l) => l.replace(/^\||\|$/g, "").split("|").map((c) => c.trim()).filter(Boolean).join("   "));
+    const text = lines.join("\n");
+    box.append(document.createTextNode(text.length > 520 ? text.slice(0, 520).replace(/\s+\S*$/, "") + " …" : text));
     card.append(box);
   } else if (!data.grounded) {
     card.append(el("p", { class: "muted" }, "No manual on file for this appliance. Say \"add the manual\" with a link and I'll read it."));

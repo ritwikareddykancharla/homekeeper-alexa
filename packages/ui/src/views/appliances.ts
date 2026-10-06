@@ -1,4 +1,4 @@
-import { mount, el, ICONS, say, escape } from "../shared";
+import { mount, el, say, escape } from "../shared";
 
 interface Appliance {
   id: string;
@@ -39,13 +39,13 @@ void mount<Data>((data) => {
   const strip = el("div", { class: "carousel", role: "list" });
   for (const a of data.appliances) {
     const tile = el("div", { class: "tile", role: "listitem", tabindex: "0" });
-    tile.append(el("div", { class: "icon" }, ICONS[a.category] ?? ICONS.other));
+    tile.append(el("div", { class: "kind" }, a.room ? `${a.categoryLabel}, ${a.room}` : a.categoryLabel));
     tile.append(el("div", { class: "name" }, a.name.replace(/\b\w/, (c) => c.toUpperCase())));
-    tile.append(el("div", { class: "model" }, `${a.brand} ${a.model}${a.room ? ` · ${a.room}` : ""}`));
+    tile.append(el("div", { class: "model" }, `${a.brand} ${a.model}`));
     const foot = el("div", { class: "foot" });
-    if (a.dueCount) foot.append(el("span", { class: `pill ${a.dueCount > 1 ? "warn" : "accent"}` }, `${a.dueCount} due`));
-    foot.append(el("span", { class: `pill ${a.hasManual ? "ok" : ""}` }, a.hasManual ? "manual" : "no manual"));
-    if (a.warranty?.covered === true) foot.append(el("span", { class: "pill ok" }, "warranty"));
+    if (a.dueCount) foot.append(el("span", { class: "pill warn" }, `${a.dueCount} due`));
+    foot.append(el("span", { class: `pill ${a.hasManual ? "ok" : ""}` }, a.hasManual ? "manual on file" : "no manual"));
+    if (a.warranty?.covered === true) foot.append(el("span", { class: "pill ok" }, "under warranty"));
     tile.append(foot);
     tile.addEventListener("click", () => void say(`What's due on the ${a.name}?`));
     tile.addEventListener("keydown", (e) => {

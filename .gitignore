@@ -34,3 +34,6 @@ tmp/
 # server deploy artifacts
 packages/server/bundle/
 packages/server/*.zip
+
+# demo video master (upload to YouTube, do not commit)
+demo/*.mp4

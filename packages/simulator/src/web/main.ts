@@ -27,6 +27,14 @@ const toolUi = new Map<string, string>();
 let busy = false;
 
 // ----------------------------------------------------------------- status
+/** "us.anthropic.claude-sonnet-4-5-20250929-v1:0" -> "Claude Sonnet 4.5" */
+function modelName(id: string): string {
+  const parts = id.replace(/^[a-z]{2}\./, "").split(".").slice(-1)[0].split("-");
+  const words = parts.filter((p) => /^[a-z]+$/i.test(p)).map((p) => p[0].toUpperCase() + p.slice(1));
+  const nums = parts.filter((p) => /^\d$/.test(p));
+  return `${words.join(" ")} ${nums.join(".")}`.trim();
+}
+
 async function loadStatus() {
   try {
     const s = (await (await fetch("/api/status")).json()) as {
@@ -41,9 +49,10 @@ async function loadStatus() {
     };
     for (const [k, v] of Object.entries(s.toolUi ?? {})) toolUi.set(k, v);
     const target = s.mcpUrl.includes("bedrock-agentcore") ? "AgentCore Runtime" : s.mcpUrl;
-    const brain = s.mode === "rules" ? "rules mode (no Bedrock)" : s.model.replace(/^[a-z]{2}\./, "").split(".").slice(-1)[0].split("-").slice(0, 3).join(" ");
-    const voice = voiceSession ? ` · live: Nova 2 Sonic + ${s.voice?.speaker ?? "Polly"}` : s.tts ? ` · Polly ${s.tts.voice}` : "";
-    status.textContent = `${s.tools.length} tools · ${target} · ${s.auth} · ${brain}${voice}`;
+    const brain = s.mode === "rules" ? "rules, no Bedrock" : modelName(s.model);
+    const voice = voiceSession ? `, live with Nova 2 Sonic and ${s.voice?.speaker ?? "Polly"}` : s.tts ? `, spoken by Polly ${s.tts.voice}` : "";
+    const where = target === "AgentCore Runtime" ? "on AgentCore Runtime" : "locally";
+    status.textContent = `HomeKeeper is running ${where} with ${s.tools.length} tools. Reasoning with ${brain}${voice}.`;
     status.classList.toggle("err", s.tools.length === 0);
     if (s.tools.length === 0) status.textContent = "MCP server unreachable (is it running on :3000?)";
   } catch {
@@ -135,9 +144,11 @@ function addTool(name: string, args: Record<string, unknown>, err = false) {
   const el = document.createElement("div");
   el.className = `tool${err ? " err" : ""}`;
   const summary = Object.entries(args)
-    .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+    .map(([k, v]) => `${k} ${typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v)}`)
     .join(", ");
-  el.innerHTML = `<span>${err ? "✕" : "⚙"}</span><code>${name}</code><span>${summary}</span>`;
+  el.innerHTML = `<span>${err ? "HomeKeeper could not run" : "HomeKeeper ran"}</span><code></code><span></span>`;
+  el.querySelector("code")!.textContent = name;
+  el.querySelectorAll("span")[1]!.textContent = summary ? `with ${summary}` : "";
   transcript.appendChild(el);
   scroll();
 }
@@ -229,7 +240,7 @@ let voiceBubble: HTMLElement | undefined;
 function onVoiceEvent(ev: VoiceEvent) {
   switch (ev.type) {
     case "ready":
-      status.textContent = "listening… say something";
+      status.textContent = "Listening";
       break;
     case "transcript":
       voiceBubble = undefined;
