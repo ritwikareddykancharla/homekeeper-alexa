@@ -7,7 +7,9 @@ HomeKeeper is an [Alexa+](https://developer.amazon.com/alexaplus/) add-on built 
 > "Alexa, the dishwasher is showing E24."
 > "That's a drain error on your Bosch 300 Series. Check the drain hose for a kink and clean the filter under the lower rack. Want me to show you the steps?"
 
-Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com) (Alexa+ track, AWS Builder and Open Source mini challenges). Landing page: [ritwikareddykancharla.github.io/homekeeper-alexa](https://ritwikareddykancharla.github.io/homekeeper-alexa/).
+Built for the [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com) (Alexa+ track, AWS Builder and Open Source mini challenges).
+
+**Try it: [d157gr6uv21vdd.cloudfront.net](https://d157gr6uv21vdd.cloudfront.net)**. That is the simulated Alexa+ host, running on AWS and talking to the HomeKeeper MCP server on Bedrock AgentCore Runtime. Type a question or press Talk for live voice. Everyone shares one demo household, so you may see what the previous visitor ordered.
 
 ## Why
 
@@ -116,6 +118,27 @@ Inspect the server with the MCP Inspector:
 
 ```bash
 npx @modelcontextprotocol/inspector http://localhost:3000/mcp
+```
+
+## Live deployment
+
+| What | Where |
+| --- | --- |
+| Simulated Alexa+ host (public) | https://d157gr6uv21vdd.cloudfront.net |
+| HomeKeeper MCP server | Amazon Bedrock AgentCore Runtime, `us-east-1`, runtime `homekeeper_mcp-4u76IK77S2` |
+| MCP endpoint | `https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A796330847946%3Aruntime%2Fhomekeeper_mcp-4u76IK77S2/invocations?qualifier=DEFAULT` (IAM SigV4) |
+| Household state | DynamoDB table `HomeKeeper-HouseholdFD44A63E-1DII45YC64N68`, manuals in S3 |
+
+The MCP endpoint is not a web page: it expects signed MCP requests. To talk to it yourself, point the simulator at it from any machine with credentials in the account:
+
+```bash
+MCP_URL="https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A796330847946%3Aruntime%2Fhomekeeper_mcp-4u76IK77S2/invocations?qualifier=DEFAULT" npm run dev -w @homekeeper/simulator
+```
+
+The public host is the `HomeKeeperDemo` stack in `infra/`: one Arm EC2 instance in the default VPC that clones this repository, builds the simulator, and runs it under systemd on port 80, behind a CloudFront distribution for HTTPS (the microphone needs a secure context) and the voice WebSocket. Its instance role can call Bedrock, Polly, and the HomeKeeper runtime. To ship a new commit to it:
+
+```bash
+aws ssm send-command --instance-ids <InstanceId> --document-name AWS-RunShellScript --parameters 'commands=["/opt/homekeeper/redeploy.sh"]'
 ```
 
 ## Deploying to AWS

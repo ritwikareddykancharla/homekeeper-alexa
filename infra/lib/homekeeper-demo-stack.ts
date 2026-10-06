@@ -79,7 +79,8 @@ export class HomeKeeperDemoStack extends Stack {
       "cat > /etc/systemd/system/homekeeper.service <<'EOF'\n[Unit]\nDescription=HomeKeeper simulated Alexa+ host\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nWorkingDirectory=/opt/homekeeper/packages/simulator\nEnvironment=PORT=80\nEnvironment=AWS_REGION=" +
         this.region +
         "\nEnvironment=HOST_MODE=bedrock\nEnvironment=HOUSEHOLD_ID=demo-home\nEnvironment=MCP_URL=" +
-        mcpUrl +
+        // systemd reads % as a specifier, so the URL-encoded ARN needs %% in the unit file.
+        mcpUrl.replace(/%/g, "%%") +
         "\nExecStart=/usr/local/bin/npx tsx src/server/index.ts\nRestart=always\nRestartSec=3\n\n[Install]\nWantedBy=multi-user.target\nEOF",
       "systemctl daemon-reload",
       "systemctl enable --now homekeeper"
